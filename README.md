@@ -1,4 +1,4 @@
-# Simple Nonlinear Schrodinger Equation solver in Rust
+# Simple Nonlinear Schrödinger Equation solver in Rust
 ## Objectives of the package
 - Learn Rust project management 
 - Learn the actual language
