@@ -1,4 +1,4 @@
-# Simple Nonlinear Schrodinger Equation solver in Rust
+# Simple Nonlinear Schrödinger Equation solver in Rust
 ## Objectives of the package
 - Learn Rust project management 
 - Learn the actual language
@@ -6,9 +6,9 @@
 
 ## The physical model
 In normalized units, the equation we want to solve is 
-$$
+```math
 u_x = -iu_{tt}+\gamma|u|^2u 
-$$
+```
 where we used the notation similar to nonlinear fiber optics: $x$ as space and $t$ as time variables.
 
 ## Method
