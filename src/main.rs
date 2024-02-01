@@ -28,6 +28,7 @@ fn main() {
         g: 0.65,
         equation: Equation::Gpe1D,
     };
+    println!("{}", format!("{:10.5}", s.nl));
     // let res = propagate(vref, 10.0);
     // println!("The elapsed time is {:?}", start.elapsed());
     // if false {
