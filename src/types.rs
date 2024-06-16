@@ -1,19 +1,24 @@
-pub enum Equation {
-  Gpe1D,
-  Npse,
-  NpsePlus,
-  Gpe3D
+use serde_derive::Deserialize;
+#[derive(Deserialize)]
+pub struct Params {
+    pub title: String,
+    pub physics: Phys,
+    pub initial: Gaussian,
+    pub options: Options,
+}
+#[derive(Deserialize)]
+pub struct Phys {
+    pub g: f64,
+    pub t: f64,
 }
 
-pub struct Sim {
-  pub nl: i64,
-  pub l: f64,
-  pub nt: i64,
-  pub t: f64,
-  pub g: f64,
-  pub equation: Equation
+#[derive(Deserialize)]
+pub struct Gaussian {
+    pub w: f64,
+    pub a: f64,
 }
 
-// enum Flags {
-//   Collapse
-// }
+#[derive(Deserialize)]
+pub struct Options {
+    pub n_saves: i32,
+}
