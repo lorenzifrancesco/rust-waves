@@ -26,8 +26,8 @@ pub fn k_vector(x_vector: &Vec<f64>) -> Vec<f64> {
     let mut vec = vec![0.0; steps_l];
     let dx = x_vector[1] - x_vector[0];
     let dk = 2.0 * PI / x_vector[steps_l - 1];
-    let k_n = 2.0 * PI / dx;
-    let mut current = -k_n / 2.0;
+    let k_n = 2.0 * PI / (2.0 * dx);
+    let mut current = 0.0;
     warn!("Need to check again the k_vector construction");
     for i in 0..steps_l {
         vec[i] = current;

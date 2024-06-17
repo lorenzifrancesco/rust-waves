@@ -33,33 +33,47 @@ fn main() {
     let input = Path::new("input/params.toml");
     let output = Path::new("results/output.csv");
     let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
-    let config: Params = toml::from_str(&contents).expect("Failed to load the config");
+    let params: Params = toml::from_str(&contents).expect("Failed to load the config");
 
     let n_l = 100;
     let steps_l = n_l + 1;
     let sigma = 5.0;
-    let l_max = 2.0 * sigma * config.initial.w;
+    let l_max = 2.0 * sigma * params.initial.w;
     let h_l: f64 = (2.0 * l_max) / (n_l as f64);
     let l_range = symmetric_range(2.0 * l_max, h_l);
     // let k_range = k_vector(&l_range);
 
-    let initial_wave: Vec<Complex<f64>> = l_range
+    let mut initial_wave: Vec<Complex<f64>> = l_range
         .iter()
-        .map(|x| gaussian(config.initial.a, config.initial.w, &(x)))
+        .map(|x| gaussian(params.initial.a, params.initial.w, &(x)))
         .collect();
 
-    let psi = propagate(&l_range, initial_wave, config);
+    let saved_psi = propagate(&l_range, &mut initial_wave, &params);
 
-    // write the waveform to csv
-    let mut writer = Writer::from_path(output).expect("Failed to create a CSV Writer");
-    writer
-        .write_record(&["Space", "Value"])
-        .expect("Failed writing");
-    for i in 1..steps_l {
-        // let formatted_row = format!("{:<50e}, {:<100e}", l_range[i], initial_wave[i]);
-        writer
-            .write_record(&[l_range[i].to_string(), psi[i].to_string()])
-            .expect("Failed to write in buffer");
-    }
-    writer.flush().expect("Failed to write the buffer");
+    save_matrix_to_csv(output, &l_range, &saved_psi, steps_l, params.options.n_saves);
+
 }
+
+fn save_matrix_to_csv(output: &Path, l_range: &Vec<f64>, psi: &Vec<Vec<Complex<f64>>>, steps_l: usize, n_saves: usize) {
+    // Create a CSV writer
+    let mut writer = Writer::from_path(output).expect("Failed to create a CSV Writer");
+
+    // Write the header
+    let mut header = vec!["Space".to_string()];
+    for i in 0..n_saves {
+        header.push(format!("Value_{}", i + 1));
+    }
+    writer.write_record(&header).expect("Failed writing header");
+
+    // Write the rows
+    for i in 0..steps_l {
+        let mut row = vec![l_range[i].to_string()];
+        for j in 0..n_saves {
+            row.push(psi[j][i].to_string());
+        }
+        writer.write_record(&row).expect("Failed to write row");
+    }
+
+    // Flush the writer
+    writer.flush().expect("Failed to write the buffer");
+} 

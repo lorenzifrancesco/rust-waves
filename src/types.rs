@@ -20,5 +20,5 @@ pub struct Gaussian {
 
 #[derive(Deserialize)]
 pub struct Options {
-    pub n_saves: i32,
+    pub n_saves: usize,
 }
