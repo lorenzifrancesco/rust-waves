@@ -16,6 +16,4 @@ We use Split Step Fourier Mehtod (SSFM) with Strang splitting.
 ## Comments
 We expect to have an improved reliability development experience with respect to Julia,
 and a slightly slower development due to absence of dynamic types.
-GPU support will be also more difficult
-Performance is critical and we should  
-
+GPU support will be also more difficult. 
