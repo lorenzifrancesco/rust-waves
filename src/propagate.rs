@@ -15,7 +15,6 @@ pub fn propagate(
     let mu_max = 1000.0;
     let h_t = 1. / mu_max;
     let n_t = ((*params).physics.t / h_t).round() as u32;
-    // let n_t = 2;
     debug!("Running using n_t = {}", n_t);
     let g = (*params).physics.g;
 
@@ -67,7 +66,7 @@ pub fn propagate(
 fn linear_step(kvec: &mut Vec<Complex<f64>>, k_range: &Vec<f64>, dt: f64) {
     kvec.iter_mut()
         .zip(k_range.iter())
-        .for_each(|(x, y)| *x *= (-I *100.0* dt * 1. / 2. * y).exp());
+        .for_each(|(x, y)| *x *= (-I * dt * 1. / 2. * y).exp());
 }
 
 /**

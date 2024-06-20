@@ -35,7 +35,7 @@ fn main() {
     let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
     let params: Params = toml::from_str(&contents).expect("Failed to load the config");
 
-    let n_l = 100;
+    let n_l = 300;
     let steps_l = n_l + 1;
     let sigma = 5.0;
     let l_max = 2.0 * sigma * params.initial.w;

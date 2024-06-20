@@ -29,16 +29,9 @@ pub fn k_vector(x_vector: &Vec<f64>) -> Vec<f64> {
     // N * dx
     let dk = 2.0 * PI / (dx * ((steps_l as f64)));
     let mut current = 0.0;
-    warn!("Need to check again the k_vector construction");
     for i in 0..steps_l {
         vec[i] = current;
         current += dk;
-    }
-    for i in 0..steps_l{
-      println!("x_vector {}", x_vector[i]); 
-    }
-    for i in 0..steps_l{
-      println!("k_vector {}", vec[i]); 
     }
     vec
 }
@@ -56,8 +49,5 @@ pub fn k_squared(k_vector: &Vec<f64>) -> Vec<f64> {
         vec[i] = (2.0 * k_folding - k_vector[i]).powi(2);
       }
     }  
-    for i in 0..n{
-      println!("k2 {}", vec[i]); 
-    }
     vec
 }
