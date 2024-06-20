@@ -2,6 +2,7 @@ use crate::{k_vector, types::*};
 use log::*;
 use rustfft::{num_complex::Complex, FftPlanner};
 const I: Complex<f64> = Complex::new(0.0, 1.0);
+use crate::tools::k_squared;
 
 /** Propagation function containing iteration loop.
 propagate the wavefunction using specified simulation
@@ -11,15 +12,15 @@ pub fn propagate(
     psi0: &mut Vec<Complex<f64>>,
     params: &Params,
 ) -> Vec<Vec<Complex<f64>>> {
-    let mu_max = 10000.0;
+    let mu_max = 1000.0;
     let h_t = 1. / mu_max;
     let n_t = ((*params).physics.t / h_t).round() as u32;
-    let n_t = 2;
+    // let n_t = 2;
     debug!("Running using n_t = {}", n_t);
     let g = (*params).physics.g;
 
     let n_l = psi0.len();
-    let k_range_squared = k_vector(l_range).iter().map(|x| x.powf(2.0)).collect();
+    let k_range_squared = k_squared(&k_vector(l_range));
 
     // Plan the transforms
     let mut planner = FftPlanner::<f64>::new();
@@ -32,8 +33,8 @@ pub fn propagate(
     let mut save_interval = (n_t as f64 / params.options.n_saves as f64).round() as u32;
 
     if save_interval == 0 {
-      save_interval = 1;
-      info!("Using save_interval = 1");
+        save_interval = 1;
+        info!("Using save_interval = 1");
     }
     let mut cnt = 0;
     for idt in 0..n_t {
@@ -49,11 +50,11 @@ pub fn propagate(
         // }
         // println!("=======")
         if idt % save_interval == 0 {
-          for i in 0..n_l {
-            saved_psi[cnt][i] = psi0[i];
-          }
-          cnt += 1;
-        } 
+            for i in 0..n_l {
+                saved_psi[cnt][i] = psi0[i];
+            }
+            cnt += 1;
+        }
     }
     saved_psi
 }
@@ -66,7 +67,7 @@ pub fn propagate(
 fn linear_step(kvec: &mut Vec<Complex<f64>>, k_range: &Vec<f64>, dt: f64) {
     kvec.iter_mut()
         .zip(k_range.iter())
-        .for_each(|(x, y)| *x *= (I * dt * 1. / 2. * y).exp());
+        .for_each(|(x, y)| *x *= (-I *100.0* dt * 1. / 2. * y).exp());
 }
 
 /**
@@ -77,5 +78,5 @@ fn linear_step(kvec: &mut Vec<Complex<f64>>, k_range: &Vec<f64>, dt: f64) {
 */
 fn nonlinear_step(xvec: &mut Vec<Complex<f64>>, dt: f64, g: f64) {
     xvec.iter_mut()
-        .for_each(|x| *x *= (I  * dt * g * x.powf(2.0)).exp());
+        .for_each(|x| *x *= (I * dt * g * x.powf(2.0)).exp());
 }
