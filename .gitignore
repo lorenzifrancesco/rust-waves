@@ -4,3 +4,6 @@ media
 results
 input
 *.csv
+perf*
+__pycache__
+*.pyc

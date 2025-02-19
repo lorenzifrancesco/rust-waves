@@ -8,7 +8,6 @@ def plot_heatmap(filename):
     x = []
     matrix = []
 
-    # Read the CSV file
     with open(filename, 'r') as csvfile:
         csvreader = csv.reader(csvfile)
         header = next(csvreader)  # Skip header row
@@ -37,18 +36,18 @@ def plot_heatmap(filename):
     matrix = np.array(matrix).T  # Transpose to get the correct orientation
 
     # Create a heatmap
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(matrix, annot=False, cmap='viridis', xticklabels=x, zorder=3)
+    plt.figure(figsize=(3, 3))
+    plt.imshow(matrix, aspect='auto', cmap='viridis', origin='lower', zorder=2)
+    # sns.heatmap(matrix, annot=False, cmap='viridis', xticklabels=x, zorder=3)
 
     # Add titles and labels
-    plt.title('Heatmap from CSV Matrix')
     plt.xlabel('Space')
     plt.ylabel('n_saves')
 
     # Display the heatmap
     plt.tight_layout()
     plt.grid(False, zorder=0)
-    plt.savefig("media/heatmap.png")
+    plt.savefig("media/heatmap.png", dpi=600)
     
 def plot_final(filename):
     x = []
@@ -75,30 +74,17 @@ def plot_final(filename):
                     print(f"Unknown value encountered: {row[1]}")
                     y.append(np.nan)
                 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(3, 3))
     plt.plot(x, np.abs(y)**2, marker='+',
              linestyle='-', color='b', label='Data')
     plt.title('Plot from CSV File')
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.grid(True)
+    plt.grid(False)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("media/final.pdf")
+    plt.savefig("media/final.png", dpi=600)
 
-
-# Example usage:
-print("____ Plotting _____")
-plot_heatmap('results/output.csv')
-
-
-# with open('matrix.csv', newline='') as csvfile:
-#     spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-#     matrix = np.loadtxt('matrix.csv', delimiter=',')
-
-#     # Create a heatmap
-#     plt.figure(figsize=(10, 8))
-#     sns.heatmap(matrix, annot=True, cmap='viridis')
-
-#     # Display the heatmap
-#     plt.show()
+if __name__ == "__main__":
+  print("____ Plotting _____")
+  plot_heatmap('results/output.csv')

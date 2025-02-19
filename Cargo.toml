@@ -1,5 +1,5 @@
 [package]
-name = "rust-waves"
+name = "rust_waves"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 rustfft = "6.2.0"
-nalgebra="0.32.3" 
+ndarray = "0.16.1"
 toml = "0.5"
 serde = "1.0"
 serde_derive = "1.0"
@@ -15,3 +15,5 @@ csv = "1.3.0"
 log = "0.4"
 env_logger = "0.9"
 simple_logger = "5.0.0"
+ndrustfft = "0.5.0"
+hdf5-metno = "0.10.1"
