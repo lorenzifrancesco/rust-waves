@@ -14,7 +14,11 @@ use crate::trotterized_operators::*;
 /** Propagation function containing iteration loop.
 propagate the wavefunction using specified simulation
 parameters  */
-pub fn propagate_1d(psi0: &mut Wavefunction1D, params: &Params, imaginary_time: bool) -> Dynamics1D {
+pub fn propagate_1d(
+    psi0: &mut Wavefunction1D,
+    params: &Params,
+    imaginary_time: bool,
+) -> Dynamics1D {
     let mu_max = 1000.0;
     let h_t = 1. / mu_max;
     if imaginary_time {
@@ -25,7 +29,10 @@ pub fn propagate_1d(psi0: &mut Wavefunction1D, params: &Params, imaginary_time: 
     debug!("Running using n_t = {}", n_t);
     let g = (*params).physics.g;
     let mut ns = normalization_factor_1d(psi0);
-    assert!((ns-1.0).abs() < 1e-10, "The wavefunction is not normalized");
+    assert!(
+        (ns - 1.0).abs() < 1e-10,
+        "The wavefunction is not normalized"
+    );
     let n_l = psi0.field.len();
     let k_range_squared = k_squared(&k_vector(&psi0.l));
 
@@ -54,8 +61,11 @@ pub fn propagate_1d(psi0: &mut Wavefunction1D, params: &Params, imaginary_time: 
         }
     }
     ns = normalization_factor_1d(psi0);
-    if (ns-1.0).abs()>1e-10 {
-      warn!("The wavefunction is not normalized. Normalization factor = {:10.5e}", ns);
+    if (ns - 1.0).abs() > 1e-10 {
+        warn!(
+            "The wavefunction is not normalized. Normalization factor = {:10.5e}",
+            ns
+        );
     }
     let mut save_interval = (n_t as f64 / params.options.n_saves as f64).round() as u32;
 
@@ -101,7 +111,10 @@ This may be accelerated using Rayon?
 */
 pub fn propagate_3d(mut psi0: &mut Wavefunction3D, params: &Params) -> Dynamics3D {
     let mut ns = normalization_factor_3d(&psi0);
-    assert!((ns-1.0).abs() < 1e-10, "The wavefunction is not normalized");
+    assert!(
+        (ns - 1.0).abs() < 1e-10,
+        "The wavefunction is not normalized"
+    );
     let k_x = k_vector(&psi0.l_x);
     let k_y = k_vector(&psi0.l_y);
     let k_z = k_vector(&psi0.l_z);
@@ -187,10 +200,36 @@ pub fn propagate_3d(mut psi0: &mut Wavefunction3D, params: &Params) -> Dynamics3
     }
     let t_elapsed = t_start.elapsed();
     ns = normalization_factor_3d(&psi0);
-    if (ns-1.0).abs()<1e-10 {
-    }
-    warn!("The wavefunction is not normalized. Normalization factor = {:10.5e}", ns);
+    if (ns - 1.0).abs() < 1e-10 {}
+    warn!(
+        "The wavefunction is not normalized. Normalization factor = {:10.5e}",
+        ns
+    );
     info!("Propagation done in {:?}", t_elapsed);
 
     saved_psi
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ndarray::Array3;
+    use rand::Rng;
+    // TODO create some actually testable functions for the transforms
+    #[test]
+    fn involution_1d() {
+        let l: Vec<f64> = (0..100).map(|x| x as f64).collect();
+        let mut psi_gaussian = Wavefunction1D {
+            field: l.iter().map(|x| gaussian_normalized(1.0, x)).collect(),
+            l: l.clone(),
+        };
+        let mut planner: rustfft::FftPlanner<f64> = rustfft::FftPlanner::<f64>::new();
+        let fft = planner.plan_fft_forward(100);
+        let ifft = planner.plan_fft_inverse(100);
+        fft.process(&mut psi_gaussian.field);
+        ifft.process(&mut psi_gaussian.field);
+    }
+
+    #[test]
+    fn involution_3d() {}
 }

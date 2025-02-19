@@ -1,23 +1,13 @@
-// use env_logger::init;
-// use rustfft::num_complex::Complex;
-// use rustfft::{Fft, Length};
+use rust_waves::io::{save_1d_wavefunction, save_3d_wavefunction};
+use rust_waves::propagate::*;
+use rust_waves::tools::*;
+use rust_waves::types::*;
+
 use std::time::Instant;
-// use std::vec;
 
 // IO
 use std::fs;
 use std::path::Path;
-
-pub mod io;
-pub mod propagate;
-pub mod tools;
-pub mod types;
-pub mod trotterized_operators;
-
-use crate::io::*;
-use crate::propagate::*;
-use crate::tools::*;
-use crate::types::*;
 
 // Logging
 use log::{debug, info, warn, Level};

@@ -4,8 +4,18 @@ use ndarray::Array3;
 use rustfft::num_complex::Complex;
 use std::f64::{self, consts::PI};
 
+
 pub fn gaussian(a: f64, w: f64, x: &f64) -> Complex<f64> {
-    Complex::new(a * (-(x / w).powf(2.) / 2.).exp(), 0.0)
+  // TODO relax the complex type and only return f64
+  Complex::new(a * (-(x / w).powf(2.) / 4.).exp(), 0.0)
+}
+
+/**
+ * the width is chosen such that the probability density is a gaussian
+ * with width w (sigma=w)
+ */
+pub fn gaussian_normalized(w: f64, x: &f64) -> Complex<f64> {
+    gaussian(1.0/(2.0*PI*w).powf(0.25), w,x)
 }
 
 pub fn sech_normalized(g: f64, x: f64) -> f64 {
@@ -166,13 +176,27 @@ pub fn normalization_factor_3d(psi: &Wavefunction3D) -> f64 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use ndarray::Array3;
+mod test {
+  use super::*;
 
-    #[test]
-    fn involution_1d() {}
-
-    #[test]
-    fn involution_3d() {}
+  #[test]
+  fn normalization_of_basic_pulses() {
+    let n_l = 100;
+    let l = 30.0;
+    let h_l: f64 = l / (n_l as f64);
+    let l_range = symmetric_range(l, h_l);
+    let psi_gaussian = Wavefunction1D {
+      field: l_range.iter().map(|x| gaussian_normalized(1.0, x)).collect(),
+      l: l_range.clone(),
+    };
+    let psi_sech = Wavefunction1D {
+      field: l_range.iter().map(|x| Complex::new(sech_normalized(1.0, *x), 0.0)).collect(),
+      l: l_range.clone(),
+    };
+    let ns_gaussian = normalization_factor_1d(&psi_gaussian);
+    let ns_sech = normalization_factor_1d(&psi_sech);
+    print!("Gaussian: {}, Sech: {}", ns_gaussian, ns_sech);  
+    assert!((ns_gaussian - 1.0).abs() < 1e-10, "Gaussian wavefunction is not normalized");
+    assert!((ns_sech - 1.0).abs() < 1e-10, "Sech wavefunction is not normalized");
+  }
 }

@@ -2,12 +2,7 @@ use rust_waves::io::{save_1d_wavefunction, save_3d_wavefunction};
 use rust_waves::propagate::{propagate_1d, propagate_3d};
 use rust_waves::types::{Dynamics3D, Params, Wavefunction3D, Wavefunction1D};
 use rust_waves::tools::{
-  gaussian, 
-  gaussian_3d, 
-  sech_normalized,
-  normalization_factor_1d, 
-  normalization_factor_3d, 
-  symmetric_range};
+  gaussian, gaussian_3d, gaussian_normalized, normalization_factor_1d, normalization_factor_3d, sech_normalized, symmetric_range};
 use std::fs::File;
 use std::io::Write;
 use std::time::Instant;
@@ -23,8 +18,8 @@ pub fn basic_1d_soliton() {
   // TODO put standard params here
   let input = Path::new("input/params.toml");
   let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
-  let params: Params = toml::from_str(&contents).expect("Failed to load the config");
-
+  let mut params: Params = toml::from_str(&contents).expect("Failed to load the config");
+  params.physics.t = 100.0;
   let n_l = params.numerics.n_l;
   let l = params.numerics.l;
   assert!(l > 2.0 * params.initial.w, "The domain is too small");
@@ -34,10 +29,14 @@ pub fn basic_1d_soliton() {
   let mut initial_wave = Wavefunction1D {
       field: l_range
           .iter()
-          .map(|x| gaussian(params.initial.a, params.initial.w, &(x)))
+          .map(|x| gaussian_normalized(params.initial.w, &(x)))
           .collect(),
       l: l_range.clone(),
   };
+  for (i, x) in initial_wave.l.iter().enumerate() {
+    println!("{}: {}", i, x);
+  }
+  print!("norm = {}", normalization_factor_1d(&initial_wave));
   assert!(normalization_factor_1d(&initial_wave) - 1.0 < 1e-10, "The wavefunction is not normalized");
 
   let saved_psi = propagate_1d(&mut initial_wave, &params, true);
