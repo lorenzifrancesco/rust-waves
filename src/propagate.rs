@@ -1,8 +1,8 @@
 use crate::tools::*;
 use crate::types::*;
-use hdf5_metno::Group;
 use log::*;
 use ndarray::Array3;
+use ndrustfft::Complex;
 use ndrustfft::{ndfft_par, FftHandler};
 use rustfft;
 use std::time::Instant;
@@ -19,14 +19,15 @@ pub fn propagate_1d(
     params: &Params,
     imaginary_time: bool,
 ) -> Dynamics1D {
-    let mu_max = 1000.0;
-    let h_t = 1. / mu_max;
+    let mut h_t = ndrustfft::Complex::new(0.0, 0.0);
     if imaginary_time {
         info!("Imaginary time propagation");
-        let h_t = ndrustfft::Complex::new(0.0, h_t);
+        h_t.im = -params.numerics.dt;
+    } else {
+        h_t.re = params.numerics.dt;
     }
-    let n_t = ((*params).physics.t / h_t).round() as u32;
-    debug!("Running using n_t = {}", n_t);
+    let n_t = ((*params).physics.t / params.numerics.dt).round() as u32;
+    debug!("Running using n_t = {}, and ht = {}", n_t, h_t.norm());
     let g = (*params).physics.g;
     let mut ns = normalization_factor_1d(psi0);
     assert!(
@@ -35,38 +36,26 @@ pub fn propagate_1d(
     );
     let n_l = psi0.field.len();
     let k_range_squared = k_squared(&k_vector(&psi0.l));
-
     // Plan the transforms
     let mut planner: rustfft::FftPlanner<f64> = rustfft::FftPlanner::<f64>::new();
     let fft = planner.plan_fft_forward(n_l);
     let ifft = planner.plan_fft_inverse(n_l);
-    warn!("Using unscaled transforms");
     // let mut dummy: Complex<f64> = I;
     // Run the propagation
     let mut saved_psi: Dynamics1D = Dynamics1D {
         psi: vec![Wavefunction1D::new(vec![I; n_l], vec![]); params.options.n_saves],
         t: vec![0.0; params.options.n_saves],
     };
-
     let dt_save = params.physics.t / params.options.n_saves as f64;
     let t_axis: Vec<f64> = (0..params.options.n_saves)
         .map(|i| dt_save * (i as f64))
         .collect();
     for it in 0..params.options.n_saves {
         saved_psi.t[it] = t_axis[it];
-        if it == 0 {
-            saved_psi.psi[it] = Wavefunction1D::new(vec![I; n_l], psi0.l.clone());
-        } else {
-            saved_psi.psi[it] = Wavefunction1D::new(vec![I; n_l], vec![]);
-        }
+        saved_psi.psi[it] = Wavefunction1D::new(vec![I; n_l], psi0.l.clone());
     }
     ns = normalization_factor_1d(psi0);
-    if (ns - 1.0).abs() > 1e-10 {
-        warn!(
-            "The wavefunction is not normalized. Normalization factor = {:10.5e}",
-            ns
-        );
-    }
+    assert!(ns-1.0 < 1e-10, "The wavefunction is not normalized");
     let mut save_interval = (n_t as f64 / params.options.n_saves as f64).round() as u32;
 
     if save_interval == 0 {
@@ -77,14 +66,17 @@ pub fn propagate_1d(
     let mut cnt = 0;
     for idt in 0..n_t {
         fft.process(&mut psi0.field);
+        psi0.field.iter_mut().for_each(|x: &mut Complex<f64>| *x = *x / (n_l as f64));
         linear_step_1d(psi0, &k_range_squared, h_t);
         ifft.process(&mut psi0.field);
-        psi0.field.iter_mut().for_each(|x| *x = *x / (n_l as f64));
         nonlinear_step_1d(psi0, h_t, g);
         if imaginary_time {
             ns = normalization_factor_1d(psi0);
-            psi0.field.iter_mut().for_each(|x| *x /= ns);
-        }
+            debug!("Normalization factor = {:10.5e}", ns);
+            psi0.field.iter_mut().for_each(|x| *x = *x / ns);
+          }
+        ns = normalization_factor_1d(psi0);
+        assert!(ns-1.0 < 1e-10, "The wavefunction is not normalized");
         // println!("{}", psi0[1]/dummy);
         // dummy = psi0[1];
         // for idl in 0..n_l {
@@ -104,12 +96,15 @@ pub fn propagate_1d(
 /** Propagation function containing iteration loop.
 propagate the wavefunction using specified simulation
 parameters
-
 how to perform the three dimensional fft:
 iterate over the three axis and do the fft on each 1D slice.
 This may be accelerated using Rayon?
 */
-pub fn propagate_3d(mut psi0: &mut Wavefunction3D, params: &Params) -> Dynamics3D {
+pub fn propagate_3d(
+    mut psi0: &mut Wavefunction3D,
+    params: &Params,
+    imaginary_time: bool,
+) -> Dynamics3D {
     let mut ns = normalization_factor_3d(&psi0);
     assert!(
         (ns - 1.0).abs() < 1e-10,
@@ -120,7 +115,14 @@ pub fn propagate_3d(mut psi0: &mut Wavefunction3D, params: &Params) -> Dynamics3
     let k_z = k_vector(&psi0.l_z);
     let k_squared = k_squared_3d(&k_x, &k_y, &k_z);
 
-    let dt = params.numerics.dt;
+    let mut h_t = ndrustfft::Complex::new(0.0, 0.0);
+    if imaginary_time {
+        info!("Imaginary time propagation");
+        h_t.im = params.numerics.dt;
+    } else {
+        h_t.re = params.numerics.dt;
+    }
+    let n_t = ((*params).physics.t / params.numerics.dt).round() as u32;
     // Cloning is actually better... Still taking 3x the time of the debug version of rust-marangon with the same dimensions
     let mut buffer_1 = psi0.field.clone();
     let mut buffer_2 = psi0.field.clone();
@@ -133,7 +135,7 @@ pub fn propagate_3d(mut psi0: &mut Wavefunction3D, params: &Params) -> Dynamics3
     // let buffer_2 = psi0.field.clone();
 
     let n_l = psi0.field.len();
-    let n_t = ((*params).physics.t / dt).round() as u32;
+    let n_t = ((*params).physics.t / params.numerics.dt).round() as u32;
     let mut saved_psi: Dynamics3D = Dynamics3D {
         psi: vec![
             Wavefunction3D::new(
@@ -186,12 +188,12 @@ pub fn propagate_3d(mut psi0: &mut Wavefunction3D, params: &Params) -> Dynamics3
         ndfft_par(&buffer_1, &mut buffer_2, &handler_y, 1);
         ndfft_par(&buffer_2, &mut psi0.field, &handler_z, 2);
         // psi0.field.iter_mut().for_each(|x| *x = *x / (n_l as f64));
-        linear_step_3d(&mut psi0, &k_squared, dt);
+        linear_step_3d(&mut psi0, &k_squared, h_t);
         ndfft_par(&psi0.field, &mut buffer_1, &handler_x, 0);
         ndfft_par(&buffer_1, &mut buffer_2, &handler_y, 1);
         ndfft_par(&buffer_2, &mut psi0.field, &handler_z, 2);
         psi0.field.iter_mut().for_each(|x| *x = *x / (n_l as f64));
-        nonlinear_step_3d(&mut psi0, dt, params.physics.g);
+        nonlinear_step_3d(&mut psi0, h_t, params.physics.g);
         if idt % save_interval == 0 {
             debug!("saving step {}", cnt);
             saved_psi.psi[cnt].field = psi0.field.clone();
@@ -215,19 +217,29 @@ mod tests {
     use super::*;
     use ndarray::Array3;
     use rand::Rng;
+    use rustfft::num_complex;
     // TODO create some actually testable functions for the transforms
     #[test]
     fn involution_1d() {
-        let l: Vec<f64> = (0..100).map(|x| x as f64).collect();
-        let mut psi_gaussian = Wavefunction1D {
+        let n_l = 100;
+        let l: Vec<f64> = (0..n_l).map(|x| x as f64).collect();
+        let mut psi_gaussian: Wavefunction1D = Wavefunction1D {
             field: l.iter().map(|x| gaussian_normalized(1.0, x)).collect(),
             l: l.clone(),
         };
+        let original_psi_field = psi_gaussian.field.clone();
         let mut planner: rustfft::FftPlanner<f64> = rustfft::FftPlanner::<f64>::new();
-        let fft = planner.plan_fft_forward(100);
-        let ifft = planner.plan_fft_inverse(100);
+        let fft = planner.plan_fft_forward(n_l);
+        let ifft = planner.plan_fft_inverse(n_l);
         fft.process(&mut psi_gaussian.field);
         ifft.process(&mut psi_gaussian.field);
+        psi_gaussian.field.iter_mut().for_each(|x| *x = *x / ((n_l) as f64));
+        for i in 0..n_l {
+            print!("orig {:3.2e}, invol {:3.2e} \n", original_psi_field[i].norm_sqr(), psi_gaussian.field[i].norm_sqr());
+        }
+        psi_gaussian.field.iter().zip(original_psi_field.iter()).for_each(|(x, y)| {
+            assert!((x - y).norm_sqr() < 1e-16);
+        });
     }
 
     #[test]
