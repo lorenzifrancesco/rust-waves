@@ -1,3 +1,4 @@
+use crate::types::Dynamics1D;
 use crate::types::{Wavefunction1D, Wavefunction3D};
 use hdf5_metno;
 use log::debug;
@@ -14,7 +15,7 @@ pub fn save_1d_wavefunction(
     let field_dataset = file
         .new_dataset::<f64>()
         .shape(wavefunction.field.len())
-        .create("field")?;
+        .create("psi_squared")?;
     // we are not using ndarrays here
     let psi_squared = wavefunction
         .field
@@ -23,6 +24,7 @@ pub fn save_1d_wavefunction(
         .map(|x| x.re.powi(2) + x.im.powi(2))
         .collect::<Vec<f64>>();
     field_dataset.write(&psi_squared)?;
+    debug!("l length: {}", wavefunction.l.len());
     let l_dataset = file
         .new_dataset::<f64>()
         .shape(wavefunction.l.len())
@@ -50,7 +52,7 @@ pub fn save_3d_wavefunction(
     let psi_dataset = file
         .new_dataset::<f64>()
         .shape(wavefunction.field.dim())
-        .create("field")?;
+        .create("psi_squared")?;
     psi_dataset.write(&psi_squared_reshaped)?;
     let l_x_dataset = file
         .new_dataset::<f64>()
@@ -71,18 +73,44 @@ pub fn save_3d_wavefunction(
     Ok(())
 }
 
-// fn save_1d(array: Array1<f64>, filename: &String) -> hdf5_metno::Result<()> {
-//     let file = hdf5_metno::File::create(filename)?;
-//     let dataset = file.new_dataset::<f64>().shape(array.dim()).create("psi")?;
-//     dataset.write(&array)?;
-//     info!("HDF5 file created as {:?}", &filename);
-//     Ok(())
-// }
+pub fn save_1d_dynamics(dynamics: &Dynamics1D, filename: &str) -> hdf5_metno::Result<()> {
+  let file = hdf5_metno::File::create(filename)?;
 
-// fn save_3d(array: Array3<f64>, filename: &String) -> hdf5_metno::Result<()> {
-//     let file = hdf5_metno::File::create(filename)?;
-//     let dataset = file.new_dataset::<f64>().shape(array.dim()).create("psi")?;
-//     dataset.write(&array)?;
-//     info!("HDF5 file created as {:?}", &filename);
-//     Ok(())
-// }
+  let rows = dynamics.psi.len();        // Number of time steps
+  let cols = dynamics.psi[0].field.len(); // Number of spatial points
+
+  // Flatten psi_squared using row-major order (ensure correct shape)
+  let mut psi_squared = Vec::with_capacity(rows * cols);
+  for psi in &dynamics.psi {
+      psi_squared.extend(psi.field.iter().map(|y| y.norm_sqr()));
+  }
+
+  // Save psi_squared with correct shape
+  let psi_dataset = file
+      .new_dataset::<f64>()
+      .shape(rows*cols)
+      .create("psi_squared")?;
+  psi_dataset.write(&psi_squared)?;
+
+  // Save l (1D array)
+  let l_dataset = file
+      .new_dataset::<f64>()
+      .shape((dynamics.psi[0].l.len(),)) // Ensure tuple shape
+      .create("l")?;
+  l_dataset.write(&dynamics.psi[0].l)?;
+
+  // Save t (1D array)
+  let t_dataset = file
+      .new_dataset::<f64>()
+      .shape((dynamics.t.len(),)) // Ensure tuple shape
+      .create("t")?;
+  t_dataset.write(&dynamics.t)?;
+
+  info!("HDF5 file created as {:?}", &filename);
+  Ok(())
+}
+
+
+pub fn save_3d_dynamics() {
+
+}

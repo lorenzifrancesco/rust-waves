@@ -2,6 +2,25 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import csv
+import h5py
+from matplotlib import cm
+
+def plot_heatmap_h5(filename="results/1d_dyn.h5"):
+  with h5py.File(filename, "r") as f:
+      l = np.array(f["l"])  # Load l (spatial coordinate)
+      t = np.array(f["t"])  # Load t (time coordinate)
+      psi_squared = np.array(f["psi_squared"]).reshape(len(t), len(l))  # Load psi_squared dataset
+
+  plt.figure(figsize=(3, 3))
+  extent = [t.min(), t.max(), l.min(), l.max()]
+  aspect = (t.max() - t.min()) / (l.max() - l.min())
+
+  plt.imshow(psi_squared.T, extent=extent, origin="lower", aspect=aspect, cmap="gist_ncar")
+  plt.colorbar(label=r"$|\psi|^2$")
+  plt.xlabel(r"$t$")
+  plt.ylabel(r"$x$")
+  plt.tight_layout()
+  plt.savefig("media/1d_heatmap.png", dpi=600)
 
 def plot_heatmap(filename):
     # Initialize lists to store the data
@@ -36,7 +55,7 @@ def plot_heatmap(filename):
     matrix = np.array(matrix).T  # Transpose to get the correct orientation
 
     # Create a heatmap
-    plt.figure(figsize=(3, 3))
+    plt.figure(figsize=(4, 4))
     plt.imshow(matrix, aspect='auto', cmap='viridis', origin='lower', zorder=2)
     # sns.heatmap(matrix, annot=False, cmap='viridis', xticklabels=x, zorder=3)
 
@@ -49,42 +68,47 @@ def plot_heatmap(filename):
     plt.grid(False, zorder=0)
     plt.savefig("media/heatmap.png", dpi=600)
     
-def plot_final(filename):
+def plot_final(filename, ax, ix):
     x = []
     y = []
-
-    with open(filename, 'r') as csvfile:
-        csvreader = csv.reader(csvfile)
-        next(csvreader)  # Skip header row if there is one
-        # for row in csvreader:
-        #     x.append(float(row[0]))
-        #     y.append(float(row[1]))
-        for row in csvreader:
-            x.append(float(row[0]))
+    viridis = cm.get_cmap('viridis')
+    with h5py.File(filename, 'r') as hdf:
+        # Assuming the datasets are named 'l' and 'field'
+        x = np.array(hdf['l'])
+        y_data = np.array(hdf['psi_squared'])
+        if len(x) == 0:
+          x = np.linspace(0, len(y_data), len(y_data))
+        # Process `field` values to handle potential complex and special cases
+        for value in y_data:
             try:
-                # Replace 'i' with 'j' for complex parsing
-                complex_num = complex(row[1].replace('i', 'j'))
+                # Convert to complex if necessary
+                complex_num = complex(str(value).replace('i', 'j'))
                 y.append(complex_num)
             except ValueError:
-                if row[1].strip().lower() == 'NaN':
+                if str(value).strip().lower() == 'nan':
                     y.append(np.nan)
-                elif row[1].strip().lower() == 'inf':
+                elif str(value).strip().lower() == 'inf':
                     y.append(np.nan)
                 else:
-                    print(f"Unknown value encountered: {row[1]}")
+                    print(f"Unknown value encountered: {value}")
                     y.append(np.nan)
-                
-    plt.figure(figsize=(3, 3))
-    plt.plot(x, np.abs(y)**2, marker='+',
-             linestyle='-', color='b', label='Data')
-    plt.title('Plot from CSV File')
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.grid(False)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig("media/final.png", dpi=600)
 
+    ax.plot(x, y, linestyle='-', color=viridis(
+      ix/3), lw=0.8)
+    ax.set_xlabel(r'x')
+    ax.set_ylabel(r'$|\psi|^2$')
+    return ax
+
+def plot_first_last():
+  plt.figure(figsize=(3, 2))
+  ax = plt.gca()
+  for ix, name in enumerate(["1d_psi_0.h5", "1d_psi_end.h5"]):
+    plot_final('results/'+name, ax, ix)
+  plt.tight_layout()
+  plt.savefig("media/1d_first_last.png", dpi=600)
+  
+    
 if __name__ == "__main__":
   print("____ Plotting _____")
-  plot_heatmap('results/output.csv')
+  plot_heatmap_h5()
+  # plot_heatmap('results/1d_psi.h5')

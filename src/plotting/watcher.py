@@ -3,10 +3,15 @@ from watchdog.events import FileSystemEventHandler
 import time
 import p1d_dyn_heatmap
 import p3d_snap_projections
+import rust_launcher
 
-def exec(path):
+def exec(sim):
   try:
-    p3d_snap_projections.plot_projections()
+    # p3d_snap_projections.plot_projections()
+    # p1d_dyn_heatmap.plot_heatmap()
+    sim.compile("debug")
+    sim.run(realtime=True)
+    p1d_dyn_heatmap.plot_first_last()
   except Exception as e:
     print(e)
 
@@ -23,12 +28,14 @@ class FileChangeHandler(FileSystemEventHandler):
         self.callback(event.src_path)
 
 if __name__ == "__main__":
-    exec("")
+    sim = rust_launcher.Simulation(input_params="input/params.toml", 
+                                   output_file="results/",
+                                   rust="./target/debug/rust_waves")
+    exec(sim)
     event_handler = FileChangeHandler(exec)
     observer = Observer()
-    observer.schedule(event_handler, path='/home/lorenzi/bench/rust-waves/results', recursive=False)
+    observer.schedule(event_handler, path=sim.input_params, recursive=False)
     observer.start()
-
     try:
         while True:
             time.sleep(0.2)
