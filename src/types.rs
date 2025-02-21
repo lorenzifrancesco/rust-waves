@@ -33,6 +33,8 @@ pub struct Initial {
 pub struct Physics {
     pub g: f64,
     pub t: f64,
+    pub npse: bool,
+    pub im_t: bool,
 }
 
 #[derive(Deserialize)]

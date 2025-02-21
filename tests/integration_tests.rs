@@ -19,7 +19,7 @@ pub fn basic_1d_soliton() {
   let input = Path::new("input/params.toml");
   let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
   let mut params: Params = toml::from_str(&contents).expect("Failed to load the config");
-  params.physics.t = 100.0;
+  params.physics.t = 1.0;
   let n_l = params.numerics.n_l;
   let l = params.numerics.l;
   assert!(l > 2.0 * params.initial.w, "The domain is too small");
@@ -33,9 +33,9 @@ pub fn basic_1d_soliton() {
           .collect(),
       l: l_range.clone(),
   };
-  for (i, x) in initial_wave.l.iter().enumerate() {
-    println!("{}: {}", i, x);
-  }
+  // for (i, x) in initial_wave.field.iter().enumerate() {
+  //   println!("{}: {}", i, x);
+  // }
   print!("norm = {}", normalization_factor_1d(&initial_wave));
   assert!(normalization_factor_1d(&initial_wave) - 1.0 < 1e-10, "The wavefunction is not normalized");
 
@@ -47,6 +47,9 @@ pub fn basic_1d_soliton() {
         .collect(),
     l: l_range.clone(),
   };
+  // for (i, x) in saved_psi.psi[4].field .iter().enumerate() {
+  //   println!("{}: {}", i, x);
+  // }
   assert_eq!(saved_psi.psi[n_l].field, target_psi.field);
 }
 
