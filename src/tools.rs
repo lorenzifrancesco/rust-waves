@@ -7,7 +7,7 @@ use std::f64::{self, consts::PI};
 
 pub fn gaussian(a: f64, w: f64, x: &f64) -> Complex<f64> {
   // TODO relax the complex type and only return f64
-  Complex::new(a * (-(x / w).powf(2.) / 4.).exp(), 0.0)
+  Complex::new(a * (-(x / w).powi(2) / 4.).exp(), 0.0)
 }
 
 /**
@@ -15,7 +15,7 @@ pub fn gaussian(a: f64, w: f64, x: &f64) -> Complex<f64> {
  * with width w (sigma=w)
  */
 pub fn gaussian_normalized(w: f64, x: &f64) -> Complex<f64> {
-    gaussian(1.0/(2.0*PI*w).powf(0.25), w,x)
+    gaussian(1.0/((2.0*PI).sqrt() * w).sqrt(), w,x)
 }
 
 pub fn sech_normalized(g: f64, x: f64) -> f64 {
@@ -86,8 +86,7 @@ pub fn k_vector(x_vector: &Vec<f64>) -> Vec<f64> {
     let steps_l = x_vector.len();
     let mut vec = vec![0.0; steps_l];
     let dx = x_vector[1] - x_vector[0];
-    // let k_n = 2.0 * PI / (2.0 * dx);
-    // N * dx
+
     let dk = 2.0 * PI / (dx * (steps_l as f64));
     let mut current = 0.0;
     for i in 0..steps_l {
@@ -101,7 +100,6 @@ pub fn k_squared(k_vector: &Vec<f64>) -> Vec<f64> {
     let n = k_vector.len();
     let k_folding = k_vector[1] * (n as f64) / 2.0;
     let mut vec = vec![0.0; n];
-    println!("{}", k_folding);
 
     for i in 1..n {
         if k_vector[i] < k_folding {
@@ -183,14 +181,15 @@ mod test {
   fn normalization_of_basic_pulses() {
     let n_l = 100;
     let l = 30.0;
-    let h_l: f64 = l / (n_l as f64);
+    let h_l: f64 = l / ((n_l-1) as f64);
     let l_range = symmetric_range(l, h_l);
+    assert!(l_range.len() == n_l, "The range is not correct");
     let psi_gaussian = Wavefunction1D {
-      field: l_range.iter().map(|x| gaussian_normalized(1.0, x)).collect(),
+      field: l_range.iter().map(|x| gaussian_normalized(0.812345, x)).collect(),
       l: l_range.clone(),
     };
     let psi_sech = Wavefunction1D {
-      field: l_range.iter().map(|x| Complex::new(sech_normalized(1.0, *x), 0.0)).collect(),
+      field: l_range.iter().map(|x| Complex::new(sech_normalized(1.12345, *x), 0.0)).collect(),
       l: l_range.clone(),
     };
     let ns_gaussian = normalization_factor_1d(&psi_gaussian);
