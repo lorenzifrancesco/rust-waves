@@ -1,7 +1,8 @@
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-
+import imageio
+import toml 
 def plot_projections(name_list = ["psi_3d", "psi_3d_2"]):
   # Load the 3D array from the HDF5 file
   for name in name_list:
@@ -58,3 +59,74 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"]):
     output_file = "media/"+name+".png"
     plt.savefig(output_file, dpi=900)
     print(f"Saved 3D projections as '{output_file}'.")
+    
+def movie(filename):
+    t, frames = load_hdf5_data(filename)
+    create_gif(t, frames, "media/3d_movie.gif")
+    
+def load_hdf5_data(filename):
+  """Load HDF5 file and extract projections."""
+  with h5py.File(filename, "r") as f:
+      # Read time values
+      t = np.array(f["t"])
+
+      # Load projection frames
+      frames = []
+      for i in range(len(t)):  # Assuming `t` defines the number of frames
+          frame_group = f[f"movie/frame_{i}"]
+          xz = np.array(frame_group["xz"])
+          yz = np.array(frame_group["yz"])
+          frames.append((xz, yz))
+  return t, frames
+
+def create_gif(t, frames, output_filename="movie.gif"):
+  """Generate and save a GIF from the projection heatmaps."""
+  images = []
+  
+  fig, axes = plt.subplots(1, 2, figsize=(6, 2.3), width_ratios=[3, 1])
+  par = toml.load("input/params.toml")
+  params = par["numerics"]
+  for i, (xz, yz) in enumerate(frames):
+      print(f"plotting frame {i:>10d}")
+      axes[0].clear()
+      axes[1].clear()
+      
+      im1 = axes[0].imshow(xz.T, 
+                           aspect="auto", 
+                           origin="lower", 
+                           cmap="gist_ncar", 
+                           interpolation="bicubic",
+                           extent=[-params["l"]/2, params["l"]/2, -params["l_z"]/2, params["l_z"]/2])
+      axes[0].set_aspect(2.2)
+      im2 = axes[1].imshow(yz.T,
+                           aspect="auto", 
+                           origin="lower", 
+                           cmap="gist_ncar", 
+                           interpolation="bicubic",
+                           extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2])
+      
+      axes[0].set_title(f"XZ (t = {t[i]:.2f})")
+      axes[1].set_title(f"YZ (t = {t[i]:.2f})")
+      axes[0].set_xlabel(r"$x$")
+      axes[0].set_ylabel(r"$z$")
+      axes[1].set_xlabel(r"$y$")
+      axes[1].set_ylabel(r"$z$")
+      
+      # plt.colorbar(im1, ax=axes[0])
+      # plt.colorbar(im2, ax=axes[1])
+
+      plt.tight_layout()
+      
+      # Save current figure as an image in memory
+      fig.canvas.draw()
+      image = np.array(fig.canvas.renderer.buffer_rgba())
+      images.append(image)
+
+  plt.close(fig)  # Close figure to free memory
+  
+  # Save images as GIF
+  imageio.mimsave(output_filename, images, fps=10, dpi=(1200, 900))
+  print(f"Saved GIF: {output_filename}")
+  
+if __name__ == "__main__":
+  movie("results/3d_movie.h5")

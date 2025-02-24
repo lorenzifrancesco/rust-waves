@@ -1,11 +1,12 @@
-use crate::types::Dynamics1D;
+use crate::types::{Dynamics1D, Dynamics3D, View3D};
 use crate::types::{Wavefunction1D, Wavefunction3D};
 use hdf5_metno;
 use log::debug;
 use log::info;
-use ndarray::{Array1, Array3};
+use ndarray::{Array1, Array2, Array3, Dim};
 use std::fs::File;
 use std::io::{self, Write};
+use ndarray::Axis;
 
 pub fn save_1d_wavefunction(
     wavefunction: &Wavefunction1D,
@@ -110,7 +111,26 @@ pub fn save_1d_dynamics(dynamics: &Dynamics1D, filename: &str) -> hdf5_metno::Re
   Ok(())
 }
 
+// pub fn save_3d_dynamics(dynamics: &Dynamics3D, filename: &str) -> hdf5_metno::Result<()> {
+//   let file = hdf5_metno::File::create(filename)?;
+//   // project the wavefunction integrating over the x and y directions
+  
+//   let yz_
 
-pub fn save_3d_dynamics() {
 
+// }
+
+pub fn project_3d_pdf(wf: & Wavefunction3D, ax: usize) -> Array2<f64> {
+  let dline;
+  assert!(ax == 0 || ax ==1 || ax == 2);
+  if ax == 0 {
+    dline= wf.l_x[1]-wf.l_x[0];
+  }  else if ax == 1 {
+    dline= wf.l_y[1]-wf.l_y[0];
+  } else {
+    dline= wf.l_z[1]-wf.l_z[0];
+  }
+  let axis = Axis(ax);
+  let projected = wf.field.mapv(|x| x.norm_sqr()).sum_axis(axis) * dline;
+  projected
 }

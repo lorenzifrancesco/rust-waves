@@ -1,13 +1,14 @@
+use crate::propagate::I;
 use crate::types::{Wavefunction1D, Wavefunction3D};
 use log::warn;
-use ndarray::Array3;
+use ndarray::{Array3, Zip};
 use rustfft::num_complex::Complex;
 use std::f64::{self, consts::PI};
-
+use toml::value::Array;
 
 pub fn gaussian(a: f64, w: f64, x: &f64) -> Complex<f64> {
-  // TODO relax the complex type and only return f64
-  Complex::new(a * (-(x / w).powi(2) / 4.).exp(), 0.0)
+    // TODO relax the complex type and only return f64
+    Complex::new(a * (-(x / w).powi(2) / 4.).exp(), 0.0)
 }
 
 /**
@@ -15,11 +16,12 @@ pub fn gaussian(a: f64, w: f64, x: &f64) -> Complex<f64> {
  * with width w (sigma=w)
  */
 pub fn gaussian_normalized(w: f64, x: &f64) -> Complex<f64> {
-    gaussian(1.0/((2.0*PI).sqrt() * w).sqrt(), w,x)
+    gaussian(1.0 / ((2.0 * PI).sqrt() * w).sqrt(), w, x)
 }
 
 pub fn sech_normalized(g: f64, x: f64) -> f64 {
-    (g / 2.0).sqrt() * 2.0 / ((g * x).exp() + (-g * x).exp())
+    assert!(g < 0.0, "The nonlinearity should be negative");
+    (-g / 2.0).sqrt() * 2.0 / ((g * x).exp() + (-g * x).exp())
 }
 
 // pub fn sech_1d_normalized() {
@@ -67,8 +69,33 @@ pub fn gaussian_3d(
     array
 }
 
-pub fn float2complex(f: f64) -> Complex<f64> {
-    Complex::new(f, 0.0)
+pub fn v0_harmonic(
+    l_x: &Vec<f64>,
+    l_y: &Vec<f64>,
+    l_z: &Vec<f64>,
+    l_harm_x: f64,
+) -> Array3<ndrustfft::Complex<f64>> {
+    assert!(l_harm_x > 0.0);
+    let mut v0 = Array3::<ndrustfft::Complex<f64>>::zeros((l_x.len(), l_y.len(), l_z.len()));
+    Zip::indexed(&mut v0).for_each(|(i, j, k), x| {
+        *x += 1.0 / 2.0 * ((l_x[i] / l_harm_x).powi(2) + (l_y[j]).powi(2) + (l_z[k]).powi(2))
+    });
+    v0
+}
+
+pub fn v0_optical_lattice(
+    l_x: &Vec<f64>,
+    l_y: &Vec<f64>,
+    l_z: &Vec<f64>,
+    amplitude: f64,
+    lattice_constant: f64,
+) -> Array3<ndrustfft::Complex<f64>> {
+    assert!(amplitude >= 0.0);
+    assert!(lattice_constant > 0.0);
+    let mut v0 = Array3::<ndrustfft::Complex<f64>>::zeros((l_x.len(), l_y.len(), l_z.len()));
+    Zip::indexed(&mut v0)
+        .for_each(|(i, _j, _k), x| *x += -amplitude * (2.0 * PI * l_x[i] / lattice_constant).cos());
+    v0
 }
 
 pub fn symmetric_range(length: f64, step: f64) -> Vec<f64> {
@@ -175,27 +202,55 @@ pub fn normalization_factor_3d(psi: &Wavefunction3D) -> f64 {
 
 #[cfg(test)]
 mod test {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn normalization_of_basic_pulses() {
-    let n_l = 100;
-    let l = 30.0;
-    let h_l: f64 = l / ((n_l-1) as f64);
-    let l_range = symmetric_range(l, h_l);
-    assert!(l_range.len() == n_l, "The range is not correct");
-    let psi_gaussian = Wavefunction1D {
-      field: l_range.iter().map(|x| gaussian_normalized(0.812345, x)).collect(),
-      l: l_range.clone(),
-    };
-    let psi_sech = Wavefunction1D {
-      field: l_range.iter().map(|x| Complex::new(sech_normalized(1.12345, *x), 0.0)).collect(),
-      l: l_range.clone(),
-    };
-    let ns_gaussian = normalization_factor_1d(&psi_gaussian);
-    let ns_sech = normalization_factor_1d(&psi_sech);
-    print!("Gaussian: {}, Sech: {}", ns_gaussian, ns_sech);  
-    assert!((ns_gaussian - 1.0).abs() < 1e-10, "Gaussian wavefunction is not normalized");
-    assert!((ns_sech - 1.0).abs() < 1e-10, "Sech wavefunction is not normalized");
-  }
+    #[test]
+    fn normalization_of_basic_pulses() {
+        let n_l = 100;
+        let l = 30.0;
+        let h_l: f64 = l / ((n_l - 1) as f64);
+        let l_range = symmetric_range(l, h_l);
+        assert!(l_range.len() == n_l, "The range is not correct");
+        let psi_gaussian = Wavefunction1D {
+            field: l_range
+                .iter()
+                .map(|x| gaussian_normalized(0.812345, x))
+                .collect(),
+            l: l_range.clone(),
+        };
+        let psi_sech = Wavefunction1D {
+            field: l_range
+                .iter()
+                .map(|x| Complex::new(sech_normalized(-1.12345, *x), 0.0))
+                .collect(),
+            l: l_range.clone(),
+        };
+        let ns_gaussian = normalization_factor_1d(&psi_gaussian);
+        let ns_sech = normalization_factor_1d(&psi_sech);
+        print!("Gaussian: {}, Sech: {}", ns_gaussian, ns_sech);
+        assert!(
+            (ns_gaussian - 1.0).abs() < 1e-10,
+            "Gaussian wavefunction is not normalized"
+        );
+        assert!(
+            (ns_sech - 1.0).abs() < 1e-10,
+            "Sech wavefunction is not normalized"
+        );
+    }
 }
+
+// pub fn simple_chemical_potential(psi: &Array1<Complex64>, sim: &Sim) -> f64 {
+//     let mut mu = (0.5 / sim.Vol) * Zip::from(&sim.ksquared)
+//         .and(psi)
+//         .map_collect(|&k2, &psi| k2 * psi.norm_sqr())
+//         .sum();
+
+//     let tmp = xspace(psi, sim);
+
+//     mu += sim.dV * Zip::from(&sim.V0)
+//         .and(&tmp)
+//         .map_collect(|&V0, &tmp| (V0 + sim.g * tmp.norm_sqr()) * tmp.norm_sqr())
+//         .sum();
+
+//     mu + 1.0 // add one transverse energy unit (1D-GPE case)
+// }

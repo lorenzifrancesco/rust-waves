@@ -94,7 +94,7 @@ def plot_final(filename, ax, ix):
                     y.append(np.nan)
 
     ax.plot(x, y, linestyle='-', color=viridis(
-      ix/3), lw=0.8)
+      ix/1.5), lw=0.2)
     ax.set_xlabel(r'x')
     ax.set_ylabel(r'$|\psi|^2$')
     return ax
@@ -110,5 +110,6 @@ def plot_first_last():
     
 if __name__ == "__main__":
   print("____ Plotting _____")
-  plot_heatmap_h5()
+  # plot_heatmap_h5()
+  plot_first_last()
   # plot_heatmap('results/1d_psi.h5')

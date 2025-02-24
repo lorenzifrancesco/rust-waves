@@ -2,6 +2,8 @@ import rust_launcher
 import os
 import time
 import p1d_dyn_heatmap
+import p3d_snap_projections
+
 def continuously_update_screen():
     try:
         last_mtime = 0
@@ -15,10 +17,11 @@ def continuously_update_screen():
                                    rust="./target/debug/rust_waves")
                 l.compile("debug")
                 l.run()
-                print(">> plotting first-last")
-                p1d_dyn_heatmap.plot_first_last()
-                print(">> plotting heatmap")
-                p1d_dyn_heatmap.plot_heatmap_h5()
+                # print(">> plotting first-last")
+                # p1d_dyn_heatmap.plot_first_last()
+                # print(">> plotting heatmap")
+                # p1d_dyn_heatmap.plot_heatmap_h5()
+                p3d_snap_projections.movie("results/3d_movie.h5")
                 print("Done.")
             time.sleep(0.1)
 

@@ -17,10 +17,14 @@ use simple_logger;
 
 fn main() {
     simple_logger::init_with_level(Level::Debug).unwrap();
-    simulation_1d();
-    // simulation_3d();
+    simulation_3d();
+    // simulation_1d();
   }
 
+/**
+ * 
+ * 
+ */
 fn simulation_1d() {
   // Define the path to your TOML file
   info!("1D simulation... \n Parsing the input TOML file...");
@@ -49,19 +53,30 @@ fn simulation_1d() {
   let saved_psi = propagate_1d(&mut initial_wave, &params, params.physics.im_t);
   let time_elapsed = time_start.elapsed();
   info!(
-      "Propagation done in {:?}. Saving the results to a CSV file...",
+      "Propagation done in {:?}. Saving the results to a HDF5 file...",
       time_elapsed
   );
   save_1d_dynamics(&saved_psi, "results/1d_dyn.h5").expect("Failed to save the dynamics");
-  save_1d_wavefunction(&initial_wave_for_save, "results/1d_psi_0.h5")
+  let target_psi = Wavefunction1D {
+    field: l_range
+        .iter()
+        .map(|x| ndrustfft::Complex::new(sech_normalized(1./2.*params.physics.g, *x), 0.0))
+        .collect(),
+    l: l_range.clone(),
+  };
+  save_1d_wavefunction(&target_psi, "results/1d_psi_0.h5")
       .expect("Failed to save the wavefunction");
-  save_1d_wavefunction(&saved_psi.psi[params.options.n_saves-1], "results/1d_psi_end.h5")
+  save_1d_wavefunction(&saved_psi.psi[saved_psi.psi.len()-1], "results/1d_psi_end.h5")
       .expect("Failed to save the wavefunction");
   // save_1d_wavefunction(&Wavefunction1D::new(k_squared, initial_wave.l.clone()), "results/1d_psi_end.h5")
   //     .expect("Failed to save the wavefunction");
   info!("Done!");
 }
 
+/**
+ * 
+ * 
+*/
 fn simulation_3d() {
   // Define the path to your TOML file
   info!("3D simulation...);
@@ -99,17 +114,14 @@ fn simulation_3d() {
   debug!("normalization factor: {:10.5e}", normalization_factor_3d(&initial_wave));
 
   let time_start = Instant::now();
-  let saved_psi: Dynamics3D = propagate_3d(&mut initial_wave, &params, params.physics.im_t);
+  let saved_psi: View3D = propagate_3d(&mut initial_wave, &params, params.physics.im_t);
   let time_elapsed: std::time::Duration = time_start.elapsed();
   info!(
-      "Propagation done in {:?}. Saving the results to a CSV file...",
+      "Propagation done in {:?}. Saving the results to a HDF5 file...",
       time_elapsed
   );
 
-  save_3d_wavefunction(&saved_psi.psi[0], "results/psi_3d.h5")
-      .expect("Failed to save the wavefunction");
-  save_3d_wavefunction(&saved_psi.psi[params.options.n_saves-1], "results/psi_3d_2.h5")
-      .expect("Failed to save the wavefunction");
+  saved_psi.save_to_hdf5("results/3d_movie.h5").unwrap();
   info!("Done!");
 }
 
