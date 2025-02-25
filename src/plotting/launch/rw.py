@@ -1,11 +1,14 @@
 import toml
 from dataclasses import dataclass
 from os import path
+from scipy.constants import pi, hbar
+from scipy.constants import physical_constants
+import numpy as np
 
 @dataclass
 class Params:
-    
-    title: str  
+
+    title: str
     # numerics
     n_l: int
     n_l_y: int
@@ -14,7 +17,7 @@ class Params:
     l_y: float
     l_z: float
     dt: float
-    
+
     # physics
     g: float
     g5: float
@@ -24,15 +27,15 @@ class Params:
     t: float
     npse: bool
     im_t: bool
-    
+
     # initial
     w: float
     w_y: float
     w_z: float
-    
+
     # options
     n_saves: int
-    
+
     @classmethod
     def read(cls, filepath: str) -> "Params":
         data = toml.load(filepath)
@@ -43,7 +46,7 @@ class Params:
             **data["initial"],
             **data["options"]
         )
-    
+
     def write(self, filepath: str):
         data = {
             "title": self.title,
@@ -57,7 +60,7 @@ class Params:
                 "dt": self.dt,
             },
             "physics": {
-                "g": self.g,
+                "g":  self.g,
                 "g5": self.g5,
                 "l_harm_x": self.l_harm_x,
                 "v0": self.v0,
@@ -79,38 +82,48 @@ class Params:
             toml.dump(data, f)
 
 
-def write_from_experiment(filename = "input/experiment.toml", title = "exp"):
-    p = Params(
-        title="Experiment",
-        n_l=256,
-        n_l_y=256,
-        n_l_z=256,
-        l=1.0,
-        l_y=1.0,
-        l_z=1.0,
-        dt=0.01,
-        g=1.0,
-        g5=1.0,
-        l_harm_x=1.0,
-        v0=1.0,
-        dl=0.1,
-        t=0.1,
-        npse=True,
-        im_t=True,
-        w=1.0,
-        w_y=1.0,
-        w_z=1.0,
-        n_saves=100
-    )
-    p.write(filename)
-    return p
-  
+def write_from_experiment(
+  input_filename="input/experiment.toml", 
+  output_filename="input/params.toml", 
+  title="exp", 
+  a_s=0.0):
+    ex = toml.load(input_filename)
+    
+    # scales
+    a0 = physical_constants["Bohr radius"][0]
+    l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
+    e_perp = hbar * ex["omega_perp"]
+    t_perp = ex["omega_perp"]**(-1) * 2 * pi 
+    e_recoil = (pi * hbar / ex["d"])**2 / ex["m"]
+    
+    # normalized
+    
+    if ex["omega_x"] != 0:
+      l_x = np.sqrt(hbar/(ex["omega_x"]*ex["m"])) / l_perp
+    else:
+      l_x = 1e300
+    g = 2 * a0 * ex["a_s"] * (ex["n_atoms"]-1) / l_perp
+    t = ex["t_f"]/t_perp
+    g5 = ex["l_3"] / l_perp**6 * t_perp * ex["n_atoms"]**3 / (6*pi**2)
+    print(">>>>>>>", float(g5))
+    v_0 = ex["v_0"] * e_recoil / e_perp
+    p_default = Params.read("input/default.toml")
+    assert(p_default.title == "default")
+    p.title=title
+    p.g  = float(g)
+    p.g5 = float(g5)
+    p.l_harm_x=l_x
+    p.v0=v_0
+    p.t=t
+    p.write(output_filename)
+    return
 
-if __name__=="__main__":
+if __name__ == "__main__":
     p = Params.read("input/params.toml")
     print(p)
     p.write("input/params2.toml")
     p2 = Params.read("input/params2.toml")
     print(p2)
-    # assert p == p2
+    assert p == p2
+    write_from_experiment()
     print("All tests passed.")
