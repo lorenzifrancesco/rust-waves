@@ -11,7 +11,7 @@ from p3d_snap_projections import *
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"])
 
-recompute = False
+recompute = True
 # dimension
 d = 1
 params = data_widths["a_s"].to_numpy()

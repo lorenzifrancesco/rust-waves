@@ -25,6 +25,8 @@ def width_from_wavefunction(title, dimensions=1):
     print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
   else:
     raise("not implemented")
+  if np.isnan(particle_fraction):
+    particle_fraction = 0
   return particle_fraction, std
 
 def apply_noise_to_widths(w, l, noise_atoms, n_atoms):
@@ -48,14 +50,14 @@ def plot_widths(use_simulation=True, noise=0.0):
   cf = toml.load("input/experiment.toml")
   n_atoms = cf["n_atoms"]
   print(f"applying the noise of ", noise)
-  noise_atoms = n_atoms * 0.23 # guess
+  noise_atoms = n_atoms * noise
   l = 8 # lattice sites
   width = data["width_sim"]
-  print("before ", width)
+  print("before: \n ", width)
   width = apply_noise_to_widths(width, l, noise_atoms, n_atoms)
-  print("after ", width)
+  print("after: \n ", width)
   if use_simulation:
-    print("\033[91mWarn:\033[0m Adding +1")
+    # print("\033[91mWarn:\033[0m Adding +1")
     # plt.plot(a_s, data["width_rough"], marker='x', linestyle='--', color='r', label='Width vs a_s (sim)')
     plt.plot(a_s, width, marker='.', linestyle='-.', color='orange', label='Width vs a_s (sim)')
   plt.xlabel(r"$a_s/a_0$")

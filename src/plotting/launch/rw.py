@@ -115,6 +115,7 @@ def write_from_experiment(
     p.g  = float(g)
     p.l_harm_x=float(l_x)
     p.v0=float(v_0)
+    p.dl = float(ex["d"] / l_perp)
     p.t =float(t)
     if load_gs:
       p.im_t = False
