@@ -1,10 +1,9 @@
 use crate::propagate::I;
 use crate::types::{Wavefunction1D, Wavefunction3D};
 use log::warn;
-use ndarray::{Array3, Zip};
+use ndarray::{Array1, Array3, Zip};
 use rustfft::num_complex::Complex;
 use std::f64::{self, consts::PI};
-use toml::value::Array;
 
 pub fn gaussian(a: f64, w: f64, x: &f64) -> Complex<f64> {
     // TODO relax the complex type and only return f64
@@ -68,6 +67,20 @@ pub fn gaussian_3d(
     }
     array
 }
+
+pub fn v0_axial_1d(
+  l: &Vec<f64>, 
+  l_harm_x: f64, 
+  amplitude:f64, 
+  lattice_constant: f64) -> Array1<ndrustfft::Complex<f64>> {
+    assert!(amplitude >= 0.0);
+    assert!(lattice_constant > 0.0);
+    let mut v0 = Array1::<ndrustfft::Complex<f64>>::zeros(l.len());
+    Zip::indexed(&mut v0).for_each(|i, x| {
+        *x += 1.0 / 2.0 * (l[i] / l_harm_x).powi(2) - amplitude * (2.0 * PI * l[i] / lattice_constant).cos();
+    });
+    v0
+} 
 
 pub fn v0_harmonic(
     l_x: &Vec<f64>,

@@ -77,8 +77,8 @@ def load_hdf5_data(filename):
           xz = np.array(frame_group["xz"])
           yz = np.array(frame_group["yz"])
           frames.append((xz, yz))
-      print(">>>>", len(frames))
-      print(">>", len(frames[-1]))
+      # print(">>>>", len(frames))
+      # print(">>", len(frames[-1]))
       # print("->", frames[-1][0])
   return t, frames
 
@@ -137,4 +137,4 @@ def create_gif(t, frames, output_filename="movie.gif"):
   print(f"Saved GIF: {output_filename}")
   
 if __name__ == "__main__":
-  movie("results/base_3d_dyn.h5")
+  movie("results/base_3d.h5")

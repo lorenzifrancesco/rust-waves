@@ -5,7 +5,7 @@ import csv
 import h5py
 from matplotlib import cm
 
-def plot_heatmap_h5(filename="results/1d_dyn.h5"):
+def plot_heatmap_h5(filename="results/1d.h5", i=-1):
   with h5py.File(filename, "r") as f:
       l = np.array(f["l"])  # Load l (spatial coordinate)
       t = np.array(f["t"])  # Load t (time coordinate)
@@ -20,7 +20,7 @@ def plot_heatmap_h5(filename="results/1d_dyn.h5"):
   plt.xlabel(r"$t$")
   plt.ylabel(r"$x$")
   plt.tight_layout()
-  plt.savefig("media/1d_heatmap.png", dpi=600)
+  plt.savefig(f"media/idx-{i}_heatmap.png", dpi=600)
 
 def plot_heatmap(filename):
     # Initialize lists to store the data
@@ -94,7 +94,7 @@ def plot_final(filename, ax, ix):
                     y.append(np.nan)
 
     ax.plot(x, y, linestyle='-', color=viridis(
-      ix/1.5), lw=0.2)
+      ix/1.5), lw=0.5)
     ax.set_xlabel(r'x')
     ax.set_ylabel(r'$|\psi|^2$')
     return ax
@@ -106,7 +106,14 @@ def plot_first_last():
     plot_final('results/'+name, ax, ix)
   plt.tight_layout()
   plt.savefig("media/1d_first_last.png", dpi=600)
-  
+ 
+def plot_snap(filename, i=-1):
+  plt.figure(figsize=(3, 1.5))
+  ax = plt.gca()
+  plot_final(filename, ax, 0)
+  plt.tight_layout()
+  plt.savefig(f"media/idx-{i}_snap.png", dpi=600)
+   
     
 if __name__ == "__main__":
   print("____ Plotting _____")

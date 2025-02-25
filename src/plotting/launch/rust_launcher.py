@@ -43,8 +43,15 @@ class Simulation:
 
   def run(self):
     print("Running...")
-    print("_" * 30)
     result = subprocess.run(
             [self.rust], text=True, stdout=subprocess.PIPE, capture_output=False)
     print("Done.")
     return
+  
+if __name__ == "__main__":
+  l = Simulation(input_params="input/params.toml",
+                 output_file="results/",
+                 rust="./target/debug/rust_waves")
+  l.compile("debug")
+  l.run()
+  print("Done.")

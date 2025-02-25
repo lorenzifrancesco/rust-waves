@@ -5,8 +5,11 @@ use log::debug;
 use log::info;
 use ndarray::{Array1, Array2, Array3, Dim};
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 use ndarray::Axis;
+use std::error::Error;
+use ndrustfft;
+use rustfft;
 
 pub fn save_1d_wavefunction(
     wavefunction: &Wavefunction1D,
@@ -73,6 +76,53 @@ pub fn save_3d_wavefunction(
     info!("HDF5 file created as {:?}", &filename);
     Ok(())
 }
+
+
+
+pub fn load_1d_wavefunction(filename: &str) -> Result<Wavefunction1D, Box<dyn Error>> {
+    let file = hdf5_metno::File::open(filename)?;
+    let psi_squared_dataset = file.dataset("psi_squared")?;
+    let psi_squared: Vec<f64> = psi_squared_dataset.read_raw()?;
+    
+    // Reconstruct the complex field from psi_squared
+    let field = psi_squared
+        .into_iter()
+        .map(|x| {
+            let re = x.sqrt();
+            let im = 0.0;
+            ndrustfft::Complex { re, im }
+        })
+        .collect::<Vec<_>>();
+    
+    // Read the 'l' dataset
+    let l_dataset = file.dataset("l")?;
+    let l: Vec<f64> = l_dataset.read_raw()?;
+    
+    Ok(Wavefunction1D { field, l })
+}
+
+pub fn load_3d_wavefunction(filename: &str) -> Result<Wavefunction3D, Box<dyn Error>> {
+    let file = hdf5_metno::File::open(filename)?;
+    
+    // Read the 'psi_squared' dataset
+    let psi_squared_dataset = file.dataset("psi_squared")?;
+    let psi_squared: Array3<f64> = psi_squared_dataset.read_dyn()?.into_dimensionality()?;
+    
+    // Reconstruct the complex field from psi_squared
+    let field = psi_squared.map(|&x| {
+        let re = x.sqrt();
+        let im = 0.0;
+        ndrustfft::Complex { re, im }
+    });
+    
+    // Read the 'l_x', 'l_y', and 'l_z' datasets
+    let l_x: Vec<f64> = file.dataset("l_x")?.read_raw()?;
+    let l_y: Vec<f64> = file.dataset("l_y")?.read_raw()?;
+    let l_z: Vec<f64> = file.dataset("l_z")?.read_raw()?;
+    
+    Ok(Wavefunction3D { field, l_x, l_y, l_z })
+}
+
 
 pub fn save_1d_dynamics(dynamics: &Dynamics1D, filename: &str) -> hdf5_metno::Result<()> {
   let file = hdf5_metno::File::create(filename)?;

@@ -86,7 +86,8 @@ def write_from_experiment(
   input_filename="input/experiment.toml", 
   output_filename="input/params.toml", 
   title="exp", 
-  a_s=0.0):
+  a_s=None, 
+  load_gs=False):
     ex = toml.load(input_filename)
     
     # scales
@@ -102,19 +103,26 @@ def write_from_experiment(
       l_x = np.sqrt(hbar/(ex["omega_x"]*ex["m"])) / l_perp
     else:
       l_x = 1e300
-    g = 2 * a0 * ex["a_s"] * (ex["n_atoms"]-1) / l_perp
+    if a_s == None:
+      a_s = ex["a_s"] 
+    g = 2 * a0 * a_s * (ex["n_atoms"]-1) / l_perp
     t = ex["t_f"]/t_perp
     g5 = ex["l_3"] / l_perp**6 * t_perp * ex["n_atoms"]**3 / (6*pi**2)
-    print(">>>>>>>", float(g5))
     v_0 = ex["v_0"] * e_recoil / e_perp
-    p_default = Params.read("input/default.toml")
-    assert(p_default.title == "default")
+    p = Params.read("input/default.toml")
+    assert(p.title == "default")
     p.title=title
     p.g  = float(g)
     p.g5 = float(g5)
-    p.l_harm_x=l_x
-    p.v0=v_0
-    p.t=t
+    p.l_harm_x=float(l_x)
+    p.v0=float(v_0)
+    p.t =float(t)
+    if load_gs:
+      p.im_t = False
+      p.w = -1.0
+    else: 
+      p.im_t = True
+      p.t = 50.0
     p.write(output_filename)
     return
 

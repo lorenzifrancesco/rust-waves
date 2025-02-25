@@ -38,6 +38,11 @@ pub fn propagate_1d(
     );
     let n_l = psi0.field.len();
     let k_range_squared = k_squared(&k_vector(&psi0.l));
+    let v0 = v0_axial_1d(
+      &psi0.l, 
+      params.physics.l_harm_x, 
+      params.physics.v0,
+      params.physics.dl);
     // Plan the transforms
     let mut planner: rustfft::FftPlanner<f64> = rustfft::FftPlanner::<f64>::new();
     let fft = planner.plan_fft_forward(n_l);
@@ -74,9 +79,9 @@ pub fn propagate_1d(
         linear_step_1d(psi0, &k_range_squared, h_t);
         ifft.process(&mut psi0.field);
         if params.physics.npse {
-            nonlinear_npse(psi0, h_t, g);
+            nonlinear_npse(psi0, &v0, h_t, g);
         } else {
-            nonlinear_step_1d(psi0, h_t, g);
+            nonlinear_step_1d(psi0, &v0, h_t, g);
         }
         if imaginary_time {
             ns = normalization_factor_1d(psi0);
