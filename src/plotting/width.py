@@ -13,7 +13,8 @@ data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"
 
 recompute = True
 # dimension
-d = 1
+default = Params.read("input/default.toml")
+d = default.dimension
 params = data_widths["a_s"].to_numpy()
 
 # Initialize result arrays
@@ -31,11 +32,12 @@ write_from_experiment("input/experiment_pre_quench.toml",
 l = Simulation(input_params="input/params.toml",
                output_file="results/",
                rust="./target/release/rust_waves",
-               dimension=3)
+               dimension=d)
 l.compile("release")
 l.run()
-plot_heatmap_h5(f"results/dyn_pre-quench_{d}d.h5")
-plot_snap(f"results/pre-quench_{d}d.h5")
+if d == 1:
+  plot_heatmap_h5(f"results/dyn_pre-quench_{d}d.h5")
+  plot_snap(f"results/pre-quench_{d}d.h5")
 
 # exit()
 print("_____ computing the widths ______")
@@ -51,10 +53,11 @@ for i, a_s in enumerate(params):
                dimension=3)
   if not os.path.exists(f"results/idx-{i}_{d}d.h5") or recompute:
     print("Computing wavefunction for ", f"results/idx-{i}_{d}d.h5")
-    l.run() 
-  plot_heatmap_h5(f"results/dyn_idx-{i}_{d}d.h5", i)
-  plot_snap(f"results/idx-{i}_{d}d.h5", i)
-  remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}", dimensions=1)
+    l.run()
+  if d == 1: 
+    plot_heatmap_h5(f"results/dyn_idx-{i}_{d}d.h5", i)
+    plot_snap(f"results/idx-{i}_{d}d.h5", i)
+  remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}", dimensions=d)
   print("Width: ", result_widths[i])
 
 print("Saving the csv file...")

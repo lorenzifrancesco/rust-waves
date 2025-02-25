@@ -39,6 +39,7 @@ pub struct Physics {
     pub v0: f64,
     pub dl: f64,
     pub t: f64,
+    pub dimension: usize,
     pub npse: bool,
     pub im_t: bool,
 }

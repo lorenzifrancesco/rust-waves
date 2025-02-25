@@ -13,25 +13,36 @@ import h5py
 def width_from_wavefunction(title, dimensions=1):
   filename = "".join(["results/", title, "_", str(dimensions), "d.h5"])
   print("Computing wavefunction for ", filename)
-  with h5py.File(filename, "r") as f:
+ 
+  if dimensions == 1:
+    with h5py.File(filename, "r") as f:
       l = np.array(f["l"])
       final_psi2 = np.array(f["psi_squared"])
-  
-  if dimensions == 1:
     dz = l[1] - l[0]
     particle_fraction = np.sum(final_psi2) * dz
     center = np.sum(l * final_psi2) / particle_fraction
     std = np.sqrt(dz * np.sum(l**2 * final_psi2) - np.sum(l * final_psi2)**2 / particle_fraction)
     print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
   else:
-    raise("not implemented")
+    with h5py.File(filename, "r") as f:
+        l_x = np.array(f["l_x"])
+        l_y = np.array(f["l_y"])
+        l_z = np.array(f["l_z"])
+        psi_squared = np.array(f["psi_squared"])
+    dx = l_x[1] - l_x[0]
+    dy = l_y[1] - l_y[0]
+    dz = l_z[1] - l_z[0]
+    dV = dx * dy * dz
+    particle_fraction = np.sum(psi_squared) * dV
+    x_mean = np.sum(l_x[:, None, None] * psi_squared) * dV / particle_fraction
+    std = np.sqrt(np.sum(l_x[:, None, None]**2 * psi_squared) * dV / particle_fraction - x_mean**2)
+
   if np.isnan(particle_fraction):
     particle_fraction = 0
   return particle_fraction, std
 
 def apply_noise_to_widths(w, l, noise_atoms, n_atoms):
   return (w*n_atoms+1/12*l**2*noise_atoms)/(n_atoms+noise_atoms)
-
 
 def plot_widths(use_simulation=True, noise=0.0):
   """

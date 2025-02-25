@@ -25,6 +25,7 @@ class Params:
     v0: float
     dl: float
     t: float
+    dimension: int
     npse: bool
     im_t: bool
 
@@ -66,6 +67,7 @@ class Params:
                 "v0": self.v0,
                 "dl": self.dl,
                 "t": self.t,
+                "dimension": self.dimension,
                 "npse": self.npse,
                 "im_t": self.im_t,
             },
@@ -129,7 +131,7 @@ def write_from_experiment(
     return
 
 if __name__ == "__main__":
-    p = Params.read("input/params.toml")
+    p = Params.read("input/default.toml")
     print(p)
     p.write("input/params2.toml")
     p2 = Params.read("input/params2.toml")

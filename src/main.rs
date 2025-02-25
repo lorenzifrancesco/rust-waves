@@ -20,20 +20,23 @@ use simple_logger;
 
 fn main() {
     simple_logger::init_with_level(Level::Debug).unwrap();
-    // simulation_3d();
-    simulation_1d();
+    let input: &Path = Path::new("input/params.toml");
+    let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
+    let params: Params = toml::from_str(&contents).expect("Failed to load the config");
+    if params.physics.dimension == 3 {
+        simulation_3d(&params);
+    } else {
+        simulation_1d(&params);
+    }
 }
 
 /**
  *
  *
  */
-fn simulation_1d() {
+fn simulation_1d(params: &Params) {
     // Define the path to your TOML file
     info!("1D simulation... \n Parsing the input TOML file...");
-    let input: &Path = Path::new("input/params.toml");
-    let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
-    let params: Params = toml::from_str(&contents).expect("Failed to load the config");
     let output = format!("results/{}_1d.h5", params.title);
     let output_dyn = format!("results/dyn_{}_1d.h5", params.title);
 
@@ -89,15 +92,12 @@ fn simulation_1d() {
  *
  *
 */
-fn simulation_3d() {
+fn simulation_3d(params: &Params) {
     // Define the path to your TOML file
     info!(
         "3D simulation...);
   info!(Parsing the input TOML file..."
     );
-    let input = Path::new("input/params.toml");
-    let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
-    let params: Params = toml::from_str(&contents).expect("Failed to load the config");
     let output = format!("results/{}_3d.h5", params.title);
     let output_dyn = format!("results/dyn_{}_3d.h5", params.title);
     // let n_l = params.numerics.n_l;
