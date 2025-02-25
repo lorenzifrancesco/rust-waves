@@ -113,7 +113,8 @@ def plot_snap(filename, i=-1):
   plot_final(filename, ax, 0)
   plt.tight_layout()
   plt.savefig(f"media/idx-{i}_snap.png", dpi=600)
-   
+
+# def plot_snap_width  
     
 if __name__ == "__main__":
   print("____ Plotting _____")

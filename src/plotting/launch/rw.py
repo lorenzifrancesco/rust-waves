@@ -113,16 +113,17 @@ def write_from_experiment(
     assert(p.title == "default")
     p.title=title
     p.g  = float(g)
-    p.g5 = float(g5)
     p.l_harm_x=float(l_x)
     p.v0=float(v_0)
     p.t =float(t)
     if load_gs:
       p.im_t = False
       p.w = -1.0
+      p.g5 = float(g5) 
     else: 
       p.im_t = True
       p.t = 50.0
+      p.g5 = 0.0 
     p.write(output_filename)
     return
 

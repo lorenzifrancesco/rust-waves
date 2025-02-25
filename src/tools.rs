@@ -80,7 +80,7 @@ pub fn v0_axial_1d(
         *x += 1.0 / 2.0 * (l[i] / l_harm_x).powi(2) - amplitude * (2.0 * PI * l[i] / lattice_constant).cos();
     });
     v0
-} 
+}
 
 pub fn v0_harmonic(
     l_x: &Vec<f64>,

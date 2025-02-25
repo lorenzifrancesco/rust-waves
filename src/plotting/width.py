@@ -11,7 +11,7 @@ from p3d_snap_projections import *
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"])
 
-recompute = True
+recompute = False
 # dimension
 d = 1
 params = data_widths["a_s"].to_numpy()
@@ -52,9 +52,9 @@ for i, a_s in enumerate(params):
   if not os.path.exists(f"results/idx-{i}_{d}d.h5") or recompute:
     print("Computing wavefunction for ", f"results/idx-{i}_{d}d.h5")
     l.run() 
-    plot_heatmap_h5(f"results/dyn_idx-{i}_{d}d.h5", i)
-    plot_snap(f"results/idx-{i}_{d}d.h5", i)
-  result_widths[i] = width_from_wavefunction(f"idx-{i}", dimensions=1)
+  plot_heatmap_h5(f"results/dyn_idx-{i}_{d}d.h5", i)
+  plot_snap(f"results/idx-{i}_{d}d.h5", i)
+  remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}", dimensions=1)
   print("Width: ", result_widths[i])
 
 print("Saving the csv file...")

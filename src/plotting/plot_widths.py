@@ -15,8 +15,7 @@ def width_from_wavefunction(title, dimensions=1):
   print("Computing wavefunction for ", filename)
   with h5py.File(filename, "r") as f:
       l = np.array(f["l"])
-      psi_squared = np.array(f["psi_squared"])
-  final_psi2 = psi_squared[-1]
+      final_psi2 = np.array(f["psi_squared"])
   
   if dimensions == 1:
     dz = l[1] - l[0]
@@ -26,7 +25,7 @@ def width_from_wavefunction(title, dimensions=1):
     print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
   else:
     raise("not implemented")
-  return std
+  return particle_fraction, std
 
 def apply_noise_to_widths(w, l, noise_atoms, n_atoms):
   return (w*n_atoms+1/12*l**2*noise_atoms)/(n_atoms+noise_atoms)

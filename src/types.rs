@@ -34,6 +34,7 @@ pub struct Initial {
 #[derive(Deserialize)]
 pub struct Physics {
     pub g: f64,
+    pub g5: f64,
     pub l_harm_x: f64,
     pub v0: f64,
     pub dl: f64,

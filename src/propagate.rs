@@ -31,6 +31,7 @@ pub fn propagate_1d(
     let n_t = ((*params).physics.t / params.numerics.dt).round() as u32;
     debug!("Running using n_t = {}, and ht = {}", n_t, h_t.norm());
     let g = (*params).physics.g;
+    let g5 = (*params).physics.g5;
     let mut ns = normalization_factor_1d(psi0);
     assert!(
         (ns - 1.0).abs() < 1e-10,
@@ -79,17 +80,17 @@ pub fn propagate_1d(
         linear_step_1d(psi0, &k_range_squared, h_t);
         ifft.process(&mut psi0.field);
         if params.physics.npse {
-            nonlinear_npse(psi0, &v0, h_t, g);
+            nonlinear_npse(psi0, &v0, h_t, g, g5);
         } else {
-            nonlinear_step_1d(psi0, &v0, h_t, g);
+            nonlinear_step_1d(psi0, &v0, h_t, g, g5);
         }
         if imaginary_time {
             ns = normalization_factor_1d(psi0);
             debug!("Normalization factor = {:10.5e}", ns);
             psi0.field.iter_mut().for_each(|x| *x = *x / ns);
+            ns = normalization_factor_1d(psi0);
+            assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
         }
-        ns = normalization_factor_1d(psi0);
-        assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
         // println!("{}", psi0[1]/dummy);
         // dummy = psi0[1];
         // for idl in 0..n_l {
