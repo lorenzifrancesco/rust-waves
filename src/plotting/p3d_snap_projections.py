@@ -77,6 +77,9 @@ def load_hdf5_data(filename):
           xz = np.array(frame_group["xz"])
           yz = np.array(frame_group["yz"])
           frames.append((xz, yz))
+      print(">>>>", len(frames))
+      print(">>", len(frames[-1]))
+      # print("->", frames[-1][0])
   return t, frames
 
 def create_gif(t, frames, output_filename="movie.gif"):
@@ -86,24 +89,29 @@ def create_gif(t, frames, output_filename="movie.gif"):
   fig, axes = plt.subplots(1, 2, figsize=(6, 2.3), width_ratios=[3, 1])
   par = toml.load("input/params.toml")
   params = par["numerics"]
+  all_data = np.array([np.concatenate((xz.flatten(), yz.flatten())) for xz, yz in frames[:95]])
+  vmin, vmax = np.nanmin(all_data), np.nanmax(all_data)
+  vmax = min(2.0, abs(vmax))
   for i, (xz, yz) in enumerate(frames):
       print(f"plotting frame {i:>10d}")
       axes[0].clear()
       axes[1].clear()
       
-      im1 = axes[0].imshow(xz.T, 
+      im1 = axes[0].imshow(xz.T,
                            aspect="auto", 
                            origin="lower", 
                            cmap="gist_ncar", 
                            interpolation="bicubic",
-                           extent=[-params["l"]/2, params["l"]/2, -params["l_z"]/2, params["l_z"]/2])
+                           extent=[-params["l"]/2, params["l"]/2, -params["l_z"]/2, params["l_z"]/2],
+                           vmin=vmin, vmax=vmax)
       axes[0].set_aspect(2.2)
       im2 = axes[1].imshow(yz.T,
                            aspect="auto", 
                            origin="lower", 
                            cmap="gist_ncar", 
                            interpolation="bicubic",
-                           extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2])
+                           extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2], 
+                           vmin=vmin, vmax=vmax)
       
       axes[0].set_title(f"XZ (t = {t[i]:.2f})")
       axes[1].set_title(f"YZ (t = {t[i]:.2f})")
@@ -129,4 +137,4 @@ def create_gif(t, frames, output_filename="movie.gif"):
   print(f"Saved GIF: {output_filename}")
   
 if __name__ == "__main__":
-  movie("results/3d_movie.h5")
+  movie("results/base_3d_dyn.h5")

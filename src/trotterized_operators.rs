@@ -3,6 +3,7 @@ use crate::types::{Wavefunction1D, Wavefunction3D};
 use log::debug;
 use ndarray::{Array3, Zip};
 use ndrustfft::Complex;
+use std::f64::consts::PI;
 /**
  Perform the linear propagation step in reciprocal space
  this include
@@ -32,10 +33,11 @@ pub fn nonlinear_step_1d(xvec: &mut Wavefunction1D, dt: Complex<f64>, g: f64) {
  * Perform the nonlinear propagation step using the NPSE equation
  */
 pub fn nonlinear_npse(xvec: &mut Wavefunction1D, dt: Complex<f64>, g: f64) {
+    // TODO check
     xvec.field
         .iter_mut()
-        .for_each(|x| *x *= (-I * dt * g * x.norm_sqr()).exp());
-}
+        .for_each(|x| *x *= (-I * dt * (g * x.norm_sqr() / (1.0 + g*x.norm_sqr()).sqrt() + 1.0/2.0 *((1.0 + g*x.norm_sqr()).sqrt() + 1.0 / (1.0 + g*x.norm_sqr()).sqrt()  ))).exp());
+} // predice il collasso corretto!
 
 /**
  Perform the linear propagation step in reciprocal space
@@ -60,7 +62,7 @@ this includes:
 pub fn nonlinear_step_3d(xvec: &mut Wavefunction3D, v0: & Array3<ndrustfft::Complex<f64>>, dt: Complex<f64>, g: f64) {
     xvec.field
         .iter_mut()
-        .for_each(|x| *x *= (-I * dt * g * x.norm_sqr()).exp());
+        .for_each(|x| *x *= (-I * dt * 2.0 * PI * g * x.norm_sqr()).exp());
     Zip::indexed(&mut xvec.field).for_each(|(i, j, k), x| {*x *= (-I * dt * v0[[i, j, k]]).exp()});
 }
 

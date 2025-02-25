@@ -47,7 +47,6 @@ pub struct Gaussian {
     pub w: f64,
     pub w_y: f64,
     pub w_z: f64,
-    pub a: f64,
 }
 
 #[derive(Deserialize)]
@@ -140,7 +139,6 @@ impl View3D {
             proj_group.new_dataset::<f64>().shape(proj.xz.dim()).create("xz")?.write(&proj.xz)?;
             proj_group.new_dataset::<f64>().shape(proj.yz.dim()).create("yz")?.write(&proj.yz)?;
         }
-
         Ok(())
     }
 }

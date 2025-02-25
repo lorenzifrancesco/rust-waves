@@ -20,13 +20,15 @@ class Simulation:
   output_file: str
   rust: str
   rust_mode: str 
-    
-  def __init__(self, input_params, output_file, rust, rust_mode="release"):
+  dimension: int
+
+  def __init__(self, input_params, output_file, rust, rust_mode="release", dimension=3):
     self.input_params = input_params
     self.output_file = output_file
     self.rust = rust
     self.rust_mode = rust_mode
-  
+    self.dimension = dimension
+ 
   def compile(self, rust_mode):
     if rust_mode == "debug":
       rust_compile = 'cargo build'

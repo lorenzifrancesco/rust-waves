@@ -73,7 +73,11 @@ pub fn propagate_1d(
             .for_each(|x: &mut Complex<f64>| *x = *x / (n_l as f64));
         linear_step_1d(psi0, &k_range_squared, h_t);
         ifft.process(&mut psi0.field);
-        nonlinear_step_1d(psi0, h_t, g);
+        if params.physics.npse {
+            nonlinear_npse(psi0, h_t, g);
+        } else {
+            nonlinear_step_1d(psi0, h_t, g);
+        }
         if imaginary_time {
             ns = normalization_factor_1d(psi0);
             debug!("Normalization factor = {:10.5e}", ns);
@@ -119,12 +123,14 @@ pub fn propagate_3d(
     let k_z = k_vector(&psi0.l_z);
     let k_squared = k_squared_3d(&k_x, &k_y, &k_z);
     let v0 = v0_harmonic(&psi0.l_x, &psi0.l_y, &psi0.l_z, params.physics.l_harm_x)
-        + v0_optical_lattice(&psi0.l_x, &psi0.l_y, &psi0.l_z, params.physics.v0, params.physics.dl);
+        + v0_optical_lattice(
+            &psi0.l_x,
+            &psi0.l_y,
+            &psi0.l_z,
+            params.physics.v0,
+            params.physics.dl,
+        );
     // let v0 = Array3::zeros((psi0.l_x.len(), psi0.l_y.len(), psi0.l_z.len()));
-    for i in v0.iter() {
-        println!("{:3.2e}", i);
-    }
-
     let mut h_t = ndrustfft::Complex::new(0.0, 0.0);
     if imaginary_time {
         info!("Imaginary time propagation");
@@ -188,21 +194,24 @@ pub fn propagate_3d(
         ndifft_par(&buffer_2, &mut psi0.field, &handler_z, 2);
         // psi0.field.iter_mut().for_each(|x| *x = *x / (n_l as f64)); already normalized
         nonlinear_step_3d(&mut psi0, &v0, h_t, params.physics.g);
+
+        if imaginary_time {
+            ns = normalization_factor_3d(psi0);
+            debug!("Normalization factor = {:10.5e}", ns);
+            psi0.field.iter_mut().for_each(|x| *x = *x / ns);
+        }
+        ns = normalization_factor_3d(psi0);
+        assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
+
         if idt % save_interval == 0 {
             debug!("saving step {}", cnt);
             saved_psi.movie[cnt] = Projections3D::new(psi0);
             cnt += 1;
         }
-        ns = normalization_factor_3d(&psi0);
-        if (ns - 1.0).abs() < 1e-10 {}
-        warn!(
-            "The wavefunction is not normalized. Normalization factor = {:10.5e}",
-            ns
-        );
     }
     let t_elapsed = t_start.elapsed();
     ns = normalization_factor_3d(&psi0);
-    if (ns - 1.0).abs() < 1e-10 {}
+    if (ns - 1.0).abs() < 1e-6 {}
     warn!(
         "The wavefunction is not normalized. Normalization factor = {:10.5e}",
         ns

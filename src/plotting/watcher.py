@@ -3,17 +3,19 @@ from watchdog.events import FileSystemEventHandler
 import time
 import p1d_dyn_heatmap
 import p3d_snap_projections
-import rust_launcher
+import launch.rust_launcher as rust_launcher
+
 
 def exec(sim):
-  try:
-    # p3d_snap_projections.plot_projections()
-    # p1d_dyn_heatmap.plot_heatmap()
-    sim.compile("debug")
-    sim.run(realtime=True)
-    p1d_dyn_heatmap.plot_first_last()
-  except Exception as e:
-    print(e)
+    try:
+        # p3d_snap_projections.plot_projections()
+        # p1d_dyn_heatmap.plot_heatmap()
+        sim.compile("debug")
+        sim.run(realtime=True)
+        p1d_dyn_heatmap.plot_first_last()
+    except Exception as e:
+        print(e)
+
 
 class FileChangeHandler(FileSystemEventHandler):
     def __init__(self, callback):
@@ -22,13 +24,14 @@ class FileChangeHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if event.is_directory:
             return
-           
+
         print("="*50)
         print(f"File {event.src_path} has been modified.")
         self.callback(event.src_path)
 
+
 if __name__ == "__main__":
-    sim = rust_launcher.Simulation(input_params="input/params.toml", 
+    sim = rust_launcher.Simulation(input_params="input/params.toml",
                                    output_file="results/",
                                    rust="./target/debug/rust_waves")
     exec(sim)
@@ -39,7 +42,7 @@ if __name__ == "__main__":
     try:
         while True:
             time.sleep(0.2)
-    except KeyboardInterrupt:   
+    except KeyboardInterrupt:
         observer.stop()
 
     observer.join()

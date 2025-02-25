@@ -28,10 +28,11 @@ fn main() {
 fn simulation_1d() {
   // Define the path to your TOML file
   info!("1D simulation... \n Parsing the input TOML file...");
-  let input = Path::new("input/params.toml");
-  let output = "results/1d_psi.h5";
+  let input: &Path = Path::new("input/params.toml");
   let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
   let params: Params = toml::from_str(&contents).expect("Failed to load the config");
+  let output = format!("results/{}_1d_dyn.h5", params.title);
+  
 
   let n_l = params.numerics.n_l;
   let l = params.numerics.l;
@@ -56,7 +57,7 @@ fn simulation_1d() {
       "Propagation done in {:?}. Saving the results to a HDF5 file...",
       time_elapsed
   );
-  save_1d_dynamics(&saved_psi, "results/1d_dyn.h5").expect("Failed to save the dynamics");
+  save_1d_dynamics(&saved_psi, &output).expect("Failed to save the dynamics");
   let target_psi = Wavefunction1D {
     field: l_range
         .iter()
@@ -84,7 +85,7 @@ fn simulation_3d() {
   let input = Path::new("input/params.toml");
   let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
   let params: Params = toml::from_str(&contents).expect("Failed to load the config");
-
+  let output = format!("results/{}_3d_dyn.h5", params.title);
   // let n_l = params.numerics.n_l;
   let l = params.numerics.l;
   assert!(l > 2.0 * params.initial.w, "The domain is too small");
@@ -121,7 +122,7 @@ fn simulation_3d() {
       time_elapsed
   );
 
-  saved_psi.save_to_hdf5("results/3d_movie.h5").unwrap();
+  saved_psi.save_to_hdf5(&output).unwrap();
   info!("Done!");
 }
 
