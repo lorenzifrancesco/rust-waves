@@ -2,7 +2,7 @@
 
 media
 results
-input
+input*
 *.csv
 perf*
 __pycache__

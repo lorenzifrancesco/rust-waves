@@ -11,7 +11,7 @@ from p3d_snap_projections import *
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"])
 
-recompute = True
+recompute = False
 # dimension
 default = Params.read("input/default.toml")
 d = default.dimension
@@ -34,10 +34,15 @@ l = Simulation(input_params="input/params.toml",
                rust="./target/release/rust_waves",
                dimension=d)
 l.compile("release")
-l.run()
+if not os.path.exists(f"results/pre-quench_{d}d.h5") or recompute:
+  l.run()
 if d == 1:
   plot_heatmap_h5(f"results/dyn_pre-quench_{d}d.h5")
   plot_snap(f"results/pre-quench_{d}d.h5")
+elif d == 3:
+  plot_projections([f"pre-quench_{d}d"])
+  movie(f"dyn_pre-quench_{d}d")
+  # plot_snap(f"results/pre-quench_{d}d.h5")
 
 # exit()
 print("_____ computing the widths ______")
@@ -57,6 +62,11 @@ for i, a_s in enumerate(params):
   if d == 1: 
     plot_heatmap_h5(f"results/dyn_idx-{i}_{d}d.h5", i)
     plot_snap(f"results/idx-{i}_{d}d.h5", i)
+  elif d == 3:
+    plot_projections([f"idx-{i}_{d}d"], i)
+    movie(f"dyn_idx-{i}_{d}d", i)
+    # plot_snap(f"results/idx-{i}_{d}d.h5", i)
+    
   remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}", dimensions=d)
   print("Width: ", result_widths[i])
 
