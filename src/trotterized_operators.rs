@@ -48,13 +48,13 @@ pub fn nonlinear_npse(
   v0: &Array1<Complex<f64>>,
   dt: Complex<f64>, 
   g: f64,
-  g5: f64) {
+  g5_1d: f64) {
     // TODO check
     xvec.field
         .iter_mut()
         .for_each(|x| *x *= (-I * dt * (g * x.norm_sqr() / (1.0 + g*x.norm_sqr()).sqrt() 
         + 1.0/2.0 *((1.0 + g*x.norm_sqr()).sqrt() + 1.0 / (1.0 + g*x.norm_sqr()).sqrt())
-      ) - dt * g5 * x.norm_sqr().powi(2)).exp());
+        - I * g5_1d * x.norm_sqr().powi(2) / ((1.0 + g*x.norm_sqr()).sqrt() ))).exp());
       xvec.field
         .iter_mut()
         .zip(v0.iter())
