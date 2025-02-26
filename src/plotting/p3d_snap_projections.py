@@ -128,7 +128,7 @@ def create_gif(t, frames, output_filename="movie.gif"):
   """Generate and save a GIF from the projection heatmaps."""
   images = []
   
-  fig, axes = plt.subplots(1, 2, figsize=(6, 2.3), width_ratios=[3, 1], dpi=900)
+  fig, axes = plt.subplots(1, 2, figsize=(6, 2.3), width_ratios=[3, 1], dpi=600)
   par = toml.load("input/params.toml")
   params = par["numerics"]
   all_data = np.array([np.concatenate((xz.flatten(), yz.flatten())) for xz, yz in frames[:95]])
@@ -175,7 +175,7 @@ def create_gif(t, frames, output_filename="movie.gif"):
   plt.close(fig)  # Close figure to free memory
   
   # Save images as GIF
-  imageio.mimsave(output_filename, images, fps=10, dpi=(2200, 1900))
+  imageio.mimsave(output_filename, images, fps=10)
   print(f"Saved GIF: {output_filename}")
   
 if __name__ == "__main__":

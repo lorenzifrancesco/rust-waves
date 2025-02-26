@@ -11,7 +11,7 @@ from p3d_snap_projections import *
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"])
 
-recompute = False
+recompute = True
 # dimension
 default = Params.read("input/default.toml")
 d = default.dimension
@@ -40,8 +40,9 @@ if d == 1:
   plot_heatmap_h5(f"results/dyn_pre-quench_{d}d.h5")
   plot_snap(f"results/pre-quench_{d}d.h5")
 elif d == 3:
-  plot_projections([f"pre-quench_{d}d"])
-  movie(f"dyn_pre-quench_{d}d")
+  # plot_projections([f"pre-quench_{d}d"])
+  # movie(f"dyn_pre-quench_{d}d")
+  pass
   # plot_snap(f"results/pre-quench_{d}d.h5")
 
 # exit()
@@ -63,8 +64,9 @@ for i, a_s in enumerate(params):
     plot_heatmap_h5(f"results/dyn_idx-{i}_{d}d.h5", i)
     plot_snap(f"results/idx-{i}_{d}d.h5", i)
   elif d == 3:
-    plot_projections([f"idx-{i}_{d}d"], i)
-    movie(f"dyn_idx-{i}_{d}d", i)
+    # plot_projections([f"idx-{i}_{d}d"], i)
+    # movie(f"dyn_idx-{i}_{d}d", i)
+    pass
     # plot_snap(f"results/idx-{i}_{d}d.h5", i)
     
   remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}", dimensions=d)
@@ -78,8 +80,11 @@ df = pd.DataFrame({
     "width_rough": result_widths_rough,
     "particle_fraction": remaining_particle_fraction
 })
-df.to_csv("results/widths_final.csv", index=False)
+if default.npse == True and default.dimension == 1:
+  df.to_csv(f"results/widths_final_npse.csv", index=False)
+else:
+  df.to_csv(f"results/widths_final_{d}d.csv", index=False)
 
 print("Plotting...")
-plot_widths(use_simulation=True, noise=0.0)
+plot_widths(noise=0.0)
 print("Done!")
