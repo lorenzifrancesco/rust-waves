@@ -6,6 +6,7 @@ use ndrustfft::Complex;
 use ndrustfft::{ndfft_par, ndifft_par, FftHandler};
 use rustfft;
 use std::f64::INFINITY;
+use std::f64::consts::PI;
 use std::time::Instant;
 use std::vec;
 
@@ -31,7 +32,7 @@ pub fn propagate_1d(
     let n_t = ((*params).physics.t / params.numerics.dt).round() as u32;
     debug!("Running using n_t = {}, and ht = {}", n_t, h_t.norm());
     let g = (*params).physics.g;
-    let g5 = (*params).physics.g5;
+    let g5_1d = (*params).physics.g5 / (3.0 * PI.powi(2));
     let mut ns = normalization_factor_1d(psi0);
     assert!(
         (ns - 1.0).abs() < 1e-10,
@@ -80,9 +81,9 @@ pub fn propagate_1d(
         linear_step_1d(psi0, &k_range_squared, h_t);
         ifft.process(&mut psi0.field);
         if params.physics.npse {
-            nonlinear_npse(psi0, &v0, h_t, g, g5);
+            nonlinear_npse(psi0, &v0, h_t, g, g5_1d);
         } else {
-            nonlinear_step_1d(psi0, &v0, h_t, g, g5);
+            nonlinear_step_1d(psi0, &v0, h_t, g, g5_1d);
         }
         if imaginary_time {
             ns = normalization_factor_1d(psi0);
@@ -112,7 +113,6 @@ propagate the wavefunction using specified simulation
 parameters
 how to perform the three dimensional fft:
 iterate over the three axis and do the fft on each 1D slice.
-This may be accelerated using Rayon?
 */
 pub fn propagate_3d(
     mut psi0: &mut Wavefunction3D,
@@ -194,12 +194,20 @@ pub fn propagate_3d(
         ndfft_par(&buffer_1, &mut buffer_2, &handler_y, 1);
         ndfft_par(&buffer_2, &mut psi0.field, &handler_z, 2);
         // psi0.field.iter_mut().for_each(|x| *x = *x / (n_l as f64));
-        linear_step_3d(&mut psi0, &k_squared, h_t);
+        linear_step_3d(
+          &mut psi0, 
+          &k_squared, 
+          h_t);
         ndifft_par(&psi0.field, &mut buffer_1, &handler_x, 0);
         ndifft_par(&buffer_1, &mut buffer_2, &handler_y, 1);
         ndifft_par(&buffer_2, &mut psi0.field, &handler_z, 2);
         // psi0.field.iter_mut().for_each(|x| *x = *x / (n_l as f64)); already normalized
-        nonlinear_step_3d(&mut psi0, &v0, h_t, params.physics.g);
+        nonlinear_step_3d(
+          &mut psi0, 
+          &v0, 
+          h_t, 
+          params.physics.g, 
+          params.physics.g5);
 
         if imaginary_time {
             ns = normalization_factor_3d(psi0);

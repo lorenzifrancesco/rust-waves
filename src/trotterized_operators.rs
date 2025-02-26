@@ -1,7 +1,7 @@
 use crate::propagate::I;
 use crate::types::{Wavefunction1D, Wavefunction3D};
 use log::debug;
-use ndarray::{Array3, Array1, Zip};
+use ndarray::{Array1, Array3, Zip};
 use ndrustfft::Complex;
 use std::f64::consts::PI;
 /**
@@ -9,10 +9,7 @@ use std::f64::consts::PI;
  this include
   - kinetic operator
 */
-pub fn linear_step_1d(
-  kvec: &mut Wavefunction1D, 
-  k_range_squared: &Vec<f64>, 
-  dt: Complex<f64>) {
+pub fn linear_step_1d(kvec: &mut Wavefunction1D, k_range_squared: &Vec<f64>, dt: Complex<f64>) {
     kvec.field
         .iter_mut()
         .zip(k_range_squared.iter())
@@ -27,14 +24,15 @@ this includes:
 - external potentials
 */
 pub fn nonlinear_step_1d(
-  xvec: &mut Wavefunction1D, 
-  v0: &Array1<Complex<f64>>, 
-  dt: Complex<f64>, 
-  g: f64,
-  g5: f64) {
+    xvec: &mut Wavefunction1D,
+    v0: &Array1<Complex<f64>>,
+    dt: Complex<f64>,
+    g: f64,
+    g5_1d: f64,
+) {
     xvec.field
         .iter_mut()
-        .for_each(|x| *x *= (-I * dt * (- I * g5 * x.norm_sqr() +  g) * x.norm_sqr()).exp());
+        .for_each(|x| *x *= (-I * dt * (-I * g5_1d * x.norm_sqr() + g) * x.norm_sqr()).exp());
     xvec.field
         .iter_mut()
         .zip(v0.iter())
@@ -44,18 +42,23 @@ pub fn nonlinear_step_1d(
  * Perform the nonlinear propagation step using the NPSE equation
  */
 pub fn nonlinear_npse(
-  xvec: &mut Wavefunction1D, 
-  v0: &Array1<Complex<f64>>,
-  dt: Complex<f64>, 
-  g: f64,
-  g5_1d: f64) {
+    xvec: &mut Wavefunction1D,
+    v0: &Array1<Complex<f64>>,
+    dt: Complex<f64>,
+    g: f64,
+    g5_1d: f64,
+) {
     // TODO check
+    xvec.field.iter_mut().for_each(|x| {
+        *x *= (-I
+            * dt
+            * (g * x.norm_sqr() / (1.0 + g * x.norm_sqr()).sqrt()
+                + 1.0 / 2.0
+                    * ((1.0 + g * x.norm_sqr()).sqrt() + 1.0 / (1.0 + g * x.norm_sqr()).sqrt())
+                - I * g5_1d * x.norm_sqr().powi(2) / ((1.0 + g * x.norm_sqr()).sqrt())))
+        .exp()
+    });
     xvec.field
-        .iter_mut()
-        .for_each(|x| *x *= (-I * dt * (g * x.norm_sqr() / (1.0 + g*x.norm_sqr()).sqrt() 
-        + 1.0/2.0 *((1.0 + g*x.norm_sqr()).sqrt() + 1.0 / (1.0 + g*x.norm_sqr()).sqrt())
-        - I * g5_1d * x.norm_sqr().powi(2) / ((1.0 + g*x.norm_sqr()).sqrt() ))).exp());
-      xvec.field
         .iter_mut()
         .zip(v0.iter())
         .for_each(|(x, y)| *x *= (-I * dt * y).exp());
@@ -81,11 +84,17 @@ this includes:
 - nonlinearity
 - external potentials
 */
-pub fn nonlinear_step_3d(xvec: &mut Wavefunction3D, v0: & Array3<ndrustfft::Complex<f64>>, dt: Complex<f64>, g: f64) {
-    xvec.field
-        .iter_mut()
-        .for_each(|x| *x *= (-I * dt * 2.0 * PI * g * x.norm_sqr()).exp());
-    Zip::indexed(&mut xvec.field).for_each(|(i, j, k), x| {*x *= (-I * dt * v0[[i, j, k]]).exp()});
+pub fn nonlinear_step_3d(
+    xvec: &mut Wavefunction3D,
+    v0: &Array3<ndrustfft::Complex<f64>>,
+    dt: Complex<f64>,
+    g: f64,
+    g5: f64,
+) {
+    xvec.field.iter_mut().for_each(|x| {
+        *x *= (-I * dt * ((-I * g5 * x.norm_sqr() + 2.0 * PI * g) * x.norm_sqr())).exp()
+    });
+    Zip::indexed(&mut xvec.field).for_each(|(i, j, k), x| *x *= (-I * dt * v0[[i, j, k]]).exp());
 }
 
 #[cfg(test)]
@@ -104,7 +113,7 @@ mod tests {
         let v0 = Array1::ones(10);
         nonlinear_step_1d(&mut psi, &v0, h_t * 100.0, g, g5);
         assert_eq!(psi.field, vec![I; 10]);
-        // these tests are broken 
+        // these tests are broken
         // nonlinear_npse(&mut psi, h_t * 100.0, g);
         // assert_eq!(psi.field, vec![I; 10]);
         // let mut psi3: Wavefunction3D = Wavefunction3D {
