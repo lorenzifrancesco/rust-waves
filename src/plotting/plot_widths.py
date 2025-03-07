@@ -10,6 +10,7 @@ from matplotlib.colorbar import Colorbar
 import re
 import h5py
 from launch.rw import Params
+from scipy.optimize import minimize
 
 
 def width_from_wavefunction(title, dimensions=1):
@@ -57,12 +58,27 @@ def width_from_wavefunction(title, dimensions=1):
 def apply_noise_to_widths(w, l, noise_atoms, n_atoms):
     return (w*n_atoms+1/12*l**2*noise_atoms)/(n_atoms+noise_atoms)
 
+def optimize_widths(noise, file):
+    data = pd.read_csv("input/widths.csv", names=["a_s", "width"])
+    try:
+        data_1 = pd.read_csv(file, header=0, names=[
+                             "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
+    except:
+        print("No data!")
+    cf = toml.load("input/experiment.toml")
+    noise_atoms = cf["n_atoms"] * noise
+    n_atoms = cf["n_atoms"]
+    widths_noise = apply_noise_to_widths(data_1["width_sim"], 8, noise_atoms, n_atoms)
+    mse = np.sum((data["width"]-widths_noise)**2)/len(data_1)
+    return mse
+ 
 
-def plot_widths(noise=0.0):
+def plot_widths(noise=0.0, plot=False, initial_number=2000):
     """
     Confrontation with the experimental data
     """
-    data = pd.read_csv("input/widths.csv", names=["a_s", "width"])
+    data = pd.read_csv("input/widths.csv", names=["a_s", "width", "number"])
+    data_exp = data
     data_list = []
     labels = []
     try:
@@ -89,10 +105,11 @@ def plot_widths(noise=0.0):
     # Extract columns
     a_s = data["a_s"]  # First column as x-axis
     width = data["width"]  # Second column as y-axis
+    number = data["number"]
     # Create the plot
     plt.figure(figsize=(3.6, 3))
     plt.plot(a_s, width, marker='o', linestyle='-',
-             color='b', label='Width vs a_s')
+             color='b', label='experiment')
     cf = toml.load("input/experiment.toml")
     n_atoms = cf["n_atoms"]
     print(f"applying the noise of ", noise)
@@ -102,27 +119,55 @@ def plot_widths(noise=0.0):
         width = data["width_sim"]
         width = apply_noise_to_widths(width, l, noise_atoms, n_atoms)
         # print("before: \n ", width)
-        print("after: \n ", width)
-        plt.plot(a_s, width, marker='.', linestyle='-.',
+        # print("after: \n ", width)
+        if plot:
+          plt.plot(a_s, width, 
+                 linestyle='-.',
                  label=labels[i])
+        else: 
+          mse = np.mean((width - data["width"])**2)
+          return mse
     plt.xlabel(r"$a_s/a_0$")
     plt.ylabel(r"$w_z$ [sites] ")
     plt.tight_layout()
-    plt.legend()
+    plt.legend(fontsize=8, labelspacing=0.2)
     plt.savefig("media/widths.pdf", dpi=300)
 
+    plt.clf()
+    plt.figure(figsize=(3.6, 3))    
+    plt.plot(a_s, number/initial_number, marker='o', linestyle='-',
+             color='b', label='experiment')
     for i, data in enumerate(data_list):
         fraction = data["particle_fraction"]  # Second column as y-axis
-        plt.clf()
-        plt.figure(figsize=(3.6, 3))
-        plt.plot(a_s, fraction, marker='o', linestyle='-.',
-                 color='r', label=labels[i])
+        plt.plot(a_s, fraction, 
+                 linestyle='-.', 
+                 label=labels[i])
     plt.xlabel(r"$a_s/a_0$")
     plt.ylabel(r"$N_{\mathrm{tot}}/N_0$")
     plt.tight_layout()
-    plt.legend()
+    plt.legend(fontsize=8, labelspacing=0.2)
     plt.savefig("media/fraction.pdf", dpi=300)
 
 
 if __name__ == "__main__":
-    plot_widths(noise=0.0)
+  plot_widths(0.0, plot=True, initial_number = 2800)
+    # file_list = ["results/widths_final_1d.csv", 
+    #              "results/widths_final_npse.csv", 
+    #              "results/widths_final_3d.csv"]
+    # for f in file_list:
+    #   print("evaluating -> ", f)
+    #   foo = lambda x: optimize_widths(x, f)
+    #   res = minimize(foo, 
+    #                  0.35, 
+    #                  method='nelder-mead',
+    #                  options={'xatol': 1e-8, 'disp': True})
+    #   print("Opt. Noise: ", res.x)
+    #   print("MSE       : ", res.fun)
+      
+    #   data_1 = pd.read_csv(f, header=0, names=[
+    #                          "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
+    #   cf = toml.load("input/experiment.toml")
+    #   noise_atoms = cf["n_atoms"] * res.x
+    #   ww = apply_noise_to_widths(data_1["width_sim"], 8, noise_atoms, cf["n_atoms"])
+    #   print(f"Values    : ", ww)
+    # save the optimal values in a csv file with the heder containing the optimal noise value
