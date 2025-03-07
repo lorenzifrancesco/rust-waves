@@ -6,6 +6,7 @@ import toml
  
 def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
   # Load the 3D array from the HDF5 file
+  interpolation = "none"
   for name in name_list:
     file_name = "results/"+name+".h5"
     field_key = "psi_squared"
@@ -72,7 +73,7 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
                           aspect="auto", 
                           origin="lower", 
                           cmap="gist_ncar", 
-                          interpolation="bicubic",
+                          interpolation=interpolation,
                           extent=[-params["l"]/2, params["l"]/2, -params["l_z"]/2, params["l_z"]/2],
                           vmin=vmin, vmax=vmax)
     axes[0].set_aspect(2.2)
@@ -80,7 +81,7 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
                           aspect="auto", 
                           origin="lower", 
                           cmap="gist_ncar", 
-                          interpolation="bicubic",
+                          interpolation=interpolation,
                           extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2], 
                           vmin=vmin, vmax=vmax)
     
@@ -128,42 +129,45 @@ def create_gif(t, frames, output_filename="movie.gif"):
   """Generate and save a GIF from the projection heatmaps."""
   images = []
   
-  fig, axes = plt.subplots(1, 2, figsize=(6, 2.3), width_ratios=[3, 1], dpi=600)
+  fig, axes = plt.subplots(1, 2, figsize=(6, 2.2), width_ratios=[4, 1.5], dpi=600)
   par = toml.load("input/params.toml")
   params = par["numerics"]
   all_data = np.array([np.concatenate((xz.flatten(), yz.flatten())) for xz, yz in frames[:95]])
   vmin, vmax = np.nanmin(all_data), np.nanmax(all_data)
   vmax = min(2.0, abs(vmax))
+  cmap = "nipy_spectral"
+  interpolation = "none"
+  
   for i, (xz, yz) in enumerate(frames):
       print(f"plotting frame {i:>10d}")
       axes[0].clear()
       axes[1].clear()
-      
       im1 = axes[0].imshow(xz.T,
                            aspect="auto", 
                            origin="lower", 
-                           cmap="gist_ncar", 
-                           interpolation="bicubic",
+                           cmap=cmap, 
+                           interpolation=interpolation,
                            extent=[-params["l"]/2, params["l"]/2, -params["l_z"]/2, params["l_z"]/2],
                            vmin=vmin, vmax=vmax)
-      axes[0].set_aspect(2.2)
+      axes[0].set_aspect(0.9)
       im2 = axes[1].imshow(yz.T,
-                           aspect="auto", 
+                           aspect="equal", 
                            origin="lower", 
-                           cmap="gist_ncar", 
-                           interpolation="bicubic",
+                           cmap=cmap, 
+                           interpolation=interpolation,
                            extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2], 
                            vmin=vmin, vmax=vmax)
       
-      axes[0].set_title(f"XZ (t = {t[i]:.2f})")
-      axes[1].set_title(f"YZ (t = {t[i]:.2f})")
+      axes[0].set_title(rf"$xz \; (t = {t[i]:.1f} t_\perp)$", fontsize=8)
+      axes[1].set_title(rf"$yz \; (t = {t[i]:.1f} t_\perp)$", fontsize=8)
       axes[0].set_xlabel(r"$x$")
       axes[0].set_ylabel(r"$z$")
       axes[1].set_xlabel(r"$y$")
       axes[1].set_ylabel(r"$z$")
       
       # plt.colorbar(im1, ax=axes[0])
-      # plt.colorbar(im2, ax=axes[1])
+      if i==0:
+        plt.colorbar(im2, ax=axes[1])
 
       plt.tight_layout()
       
@@ -175,9 +179,12 @@ def create_gif(t, frames, output_filename="movie.gif"):
   plt.close(fig)  # Close figure to free memory
   
   # Save images as GIF
-  imageio.mimsave(output_filename, images, fps=10)
+  print("adding more last frames for better observation of final state")
+  images.extend([images[-1]] * 20)
+  imageio.mimsave(output_filename, images, fps=10, loop=0)
   print(f"Saved GIF: {output_filename}")
   
 if __name__ == "__main__":
-  # movie("results/base_3d.h5")
-  plot_projections(["pre-quench_3d"])
+  num = 0
+  movie(f"dyn_idx-{num}_3d", num)
+  # plot_projections(["pre-quench_3d"])
