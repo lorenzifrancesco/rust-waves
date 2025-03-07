@@ -12,10 +12,12 @@ from p3d_snap_projections import *
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"])
 
 recompute = True
+plotting_evolution = False
 # dimension
 default = Params.read("input/default.toml")
 d = default.dimension
 params = data_widths["a_s"].to_numpy()
+# params = [params[0]]
 
 # Initialize result arrays
 result_widths = np.zeros(len(params))
@@ -36,14 +38,14 @@ l = Simulation(input_params="input/params.toml",
 l.compile("release")
 if not os.path.exists(f"results/pre-quench_{d}d.h5") or recompute:
   l.run()
-if d == 1:
-  plot_heatmap_h5(f"results/dyn_pre-quench_{d}d.h5")
-  plot_snap(f"results/pre-quench_{d}d.h5")
-elif d == 3:
-  # plot_projections([f"pre-quench_{d}d"])
-  # movie(f"dyn_pre-quench_{d}d")
-  pass
-  # plot_snap(f"results/pre-quench_{d}d.h5")
+if plotting_evolution:
+  if d == 1:
+    plot_heatmap_h5(f"results/dyn_pre-quench_{d}d.h5")
+    plot_snap(f"results/pre-quench_{d}d.h5")
+  elif d == 3:
+    plot_projections([f"pre-quench_{d}d"])
+    movie(f"dyn_pre-quench_{d}d")
+    # plot_snap(f"results/pre-quench_{d}d.h5")
 
 # exit()
 print("_____ computing the widths ______")
@@ -53,6 +55,7 @@ for i, a_s in enumerate(params):
                         f"idx-{i}", 
                         a_s=a_s, 
                         load_gs=True)
+  # exit() # save the zero simulation
   l = Simulation(input_params="input/params.toml",
                output_file="results/",
                rust="./target/release/rust_waves",
@@ -60,14 +63,14 @@ for i, a_s in enumerate(params):
   if not os.path.exists(f"results/idx-{i}_{d}d.h5") or recompute:
     print("Computing wavefunction for ", f"results/idx-{i}_{d}d.h5")
     l.run()
-  if d == 1: 
-    plot_heatmap_h5(f"results/dyn_idx-{i}_{d}d.h5", i)
-    plot_snap(f"results/idx-{i}_{d}d.h5", i)
-  elif d == 3:
-    # plot_projections([f"idx-{i}_{d}d"], i)
-    # movie(f"dyn_idx-{i}_{d}d", i)
-    pass
-    # plot_snap(f"results/idx-{i}_{d}d.h5", i)
+  if plotting_evolution:
+    if d == 1: 
+      plot_heatmap_h5(f"results/dyn_idx-{i}_{d}d.h5", i)
+      plot_snap(f"results/idx-{i}_{d}d.h5", i)
+    elif d == 3:
+      plot_projections([f"idx-{i}_{d}d"], i)
+      movie(f"dyn_idx-{i}_{d}d", i)
+      # plot_snap(f"results/idx-{i}_{d}d.h5", i)
     
   remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}", dimensions=d)
   print("Width: ", result_widths[i])
@@ -86,5 +89,7 @@ else:
   df.to_csv(f"results/widths_final_{d}d.csv", index=False)
 
 print("Plotting...")
-plot_widths(noise=0.0)
+plot_widths(noise=0.0, 
+            plot=True,
+            initial_number=2800)
 print("Done!")

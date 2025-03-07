@@ -25,7 +25,8 @@ def continuously_update_screen():
                     print(">> plotting heatmap")
                     p1d_dyn_heatmap.plot_heatmap_h5()
                 else:
-                    p3d_snap_projections.movie("results/base_3d.h5")
+                    num = 0
+                    p3d_snap_projections.movie(f"dyn_idx-{num}_3d", num)
                 print("Done.")
             time.sleep(0.1)
 
