@@ -110,7 +110,7 @@ def write_from_experiment(
     g = 2 * a0 * a_s * (ex["n_atoms"]-1) / l_perp
     t = ex["t_f"]/t_perp
     # raise("fix the following")
-    g5 = ex["l_3"] / l_perp**6 * t_perp * ex["n_atoms"]**3 / 2
+    g5 = ex["l_3"] / l_perp**6 * t_perp * ex["n_atoms"]**2 / 2
     v_0 = ex["v_0"] * e_recoil / e_perp
     p = Params.read("input/default.toml")
     assert(p.title == "default")
@@ -126,7 +126,7 @@ def write_from_experiment(
       p.g5 = float(g5) 
     else: 
       p.im_t = True
-      p.t = 20.0
+      p.t = 8.0
       p.g5 = 0.0 
       p.w = 1.5
 

@@ -6,7 +6,7 @@ use std::f64::{self, consts::PI};
 
 pub fn gaussian(a: f64, w: f64, x: &f64) -> Complex<f64> {
     // TODO relax the complex type and only return f64
-    Complex::new(a * (-(x / w).powi(2) / 4.).exp(), 0.0)
+    Complex::new(a * (-(x / w).powi(2) / 2.).exp(), 0.0)
 }
 
 /**
@@ -14,7 +14,7 @@ pub fn gaussian(a: f64, w: f64, x: &f64) -> Complex<f64> {
  * with width w (sigma=w)
  */
 pub fn gaussian_normalized(w: f64, x: &f64) -> Complex<f64> {
-    gaussian(1.0 / ((2.0 * PI).sqrt() * w).sqrt(), w, x)
+    gaussian(1.0 / ((PI).sqrt() * w).sqrt(), w, x)
 }
 
 pub fn sech_normalized(g: f64, x: f64) -> f64 {
@@ -57,7 +57,7 @@ pub fn gaussian_3d(
                 let dz = z - mean.2;
                 let gaussian_value = (1.0 / ((2.0 * PI).sqrt())).powi(3)
                     * (-((dx / sigma.0).powi(2) + (dy / sigma.1).powi(2) + (dz / sigma.2).powi(2))
-                        / (4.0))
+                        / (2.0))
                         .exp();
                 array[[ix, iy, iz]].re = gaussian_value;
                 array[[ix, iy, iz]].im = 0.0;

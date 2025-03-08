@@ -204,5 +204,5 @@ if __name__ == "__main__":
         print(f"Values    : ", ww)
     plot_widths(0.0,
                 plot=True,
-                initial_number=3500,
+                initial_number=3000,
                 noises=noises)

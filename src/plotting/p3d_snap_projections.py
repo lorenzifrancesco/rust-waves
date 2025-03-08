@@ -111,10 +111,11 @@ def create_gif(t, frames, output_filename="movie.gif"):
   vmin, vmax = np.nanmin(all_data), np.nanmax(all_data)
   vmax = min(2.0, abs(vmax))
   cmap = "nipy_spectral"
-  interpolation = "none"
+  interpolation = "bicubic"
   
+  print()
   for i, (xz, yz) in enumerate(frames):
-      print(f"plotting frame {i:>10d}")
+      print(f"\rplotting frame {i:>10d}", end="")
       axes[0].clear()
       axes[1].clear()
       im1 = axes[0].imshow(xz.T,
@@ -154,13 +155,13 @@ def create_gif(t, frames, output_filename="movie.gif"):
   plt.close(fig)  # Close figure to free memory
   
   # Save images as GIF
-  print("adding more last frames for better observation of final state")
+  print(". Adding more last frames...")
   images.extend([images[-1]] * 20)
   imageio.mimsave(output_filename, images, fps=10, loop=0)
   print(f"Saved GIF: {output_filename}")
   
 if __name__ == "__main__":
-  num = -77
+  num = 0
   # movie(f"dyn_idx-{num}_3d", num)
-  movie(f"dyn_check_3d", num)
+  movie(f"dyn_idx-0_3d", num)
   # plot_projections(["pre-quench_3d"])

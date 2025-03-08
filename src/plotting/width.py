@@ -12,7 +12,7 @@ from p3d_snap_projections import *
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
 recompute = False
-plotting_evolution = False
+plotting_evolution = True
 # dimension
 default = Params.read("input/default.toml")
 d = default.dimension
@@ -92,4 +92,5 @@ print("Plotting...")
 plot_widths(noise=0.0, 
             plot=True,
             initial_number=3000)
+
 print("Done!")
