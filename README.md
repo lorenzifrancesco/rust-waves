@@ -19,8 +19,3 @@ and a slightly slower development due to absence of dynamic types.
 GPU support will be also more difficult
 Performance is critical and we should  
 
-### TODO
-  -[ ] check the normalization of the 3d wavefunction and the transforms. Check the range of the k_vectors and their folding 
-  -[ ] check the signs of the propagators and their constants. (we could eventually use an adaptive time stepping by comparing two different operator splitting methods)
-  -[ ] check that we are getting physically meaningful 1D solitons, with the right shape.
-  -[ ] implement the NPSE (it should be very easy) 
