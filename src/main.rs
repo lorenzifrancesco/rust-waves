@@ -122,8 +122,10 @@ fn simulation_3d(params: &Params) {
 
     let mut initial_wave;
     if params.initial.w == -1.0 {
+        info!("Loading the pre-quench wavefunction...");
         initial_wave = load_3d_wavefunction("results/pre-quench_3d.h5").unwrap();
     } else {
+        info!("Creating the initial wavefunction as a Gaussian...");
         initial_wave = Wavefunction3D {
             field: gaussian_3d(
                 (&l_range_x, &l_range_y, &l_range_z),

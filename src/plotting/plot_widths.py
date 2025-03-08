@@ -58,8 +58,9 @@ def width_from_wavefunction(title, dimensions=1):
 def apply_noise_to_widths(w, l, noise_atoms, n_atoms):
     return (w*n_atoms+1/12*l**2*noise_atoms)/(n_atoms+noise_atoms)
 
+
 def optimize_widths(noise, file):
-    data = pd.read_csv("input/widths.csv", names=["a_s", "width"])
+    data = pd.read_csv("input/widths.csv", names=["a_s", "width", "number"])
     try:
         data_1 = pd.read_csv(file, header=0, names=[
                              "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
@@ -68,37 +69,44 @@ def optimize_widths(noise, file):
     cf = toml.load("input/experiment.toml")
     noise_atoms = cf["n_atoms"] * noise
     n_atoms = cf["n_atoms"]
-    widths_noise = apply_noise_to_widths(data_1["width_sim"], 8, noise_atoms, n_atoms)
+    widths_noise = apply_noise_to_widths(
+        data_1["width_sim"], 8, noise_atoms, n_atoms)
     mse = np.sum((data["width"]-widths_noise)**2)/len(data_1)
     return mse
- 
 
-def plot_widths(noise=0.0, plot=False, initial_number=2000):
+
+def plot_widths(noise=0.0,
+                plot=False,
+                initial_number=2000,
+                eqs=["1d", "npse", "3d"],
+                noises=None):
     """
     Confrontation with the experimental data
     """
     data = pd.read_csv("input/widths.csv", names=["a_s", "width", "number"])
-    data_exp = data
     data_list = []
     labels = []
     try:
         data_1 = pd.read_csv("results/widths_final_1d.csv", header=0, names=[
                              "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
-        data_list.append(data_1)
+        if "1d" in eqs:
+            data_list.append(data_1)
         labels.append("1D")
     except:
         print("No 1D data")
     try:
         data_npse = pd.read_csv("results/widths_final_npse.csv", header=0, names=[
                                 "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
-        data_list.append(data_npse)
+        if "npse" in eqs:
+            data_list.append(data_npse)
         labels.append("NPSE")
     except:
         print("No NPSE data")
     try:
         data_3 = pd.read_csv("results/widths_final_3d.csv", header=0, names=[
                              "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
-        data_list.append(data_3)
+        if "3d" in eqs:
+            data_list.append(data_3)
         labels.append("3D")
     except:
         print("No 3D data")
@@ -112,62 +120,83 @@ def plot_widths(noise=0.0, plot=False, initial_number=2000):
              color='b', label='experiment')
     cf = toml.load("input/experiment.toml")
     n_atoms = cf["n_atoms"]
+    if noises is not None:
+        noise = 0.0
     print(f"applying the noise of ", noise)
     noise_atoms = n_atoms * noise
     l = 8  # lattice sites
     for i, data in enumerate(data_list):
         width = data["width_sim"]
+        if noises is not None:
+            noise_atoms = n_atoms * noises[i]
+
         width = apply_noise_to_widths(width, l, noise_atoms, n_atoms)
         # print("before: \n ", width)
         # print("after: \n ", width)
+        sketchy = 1
+        if i == 2:
+          sketchy = 2
         if plot:
-          plt.plot(a_s, width, 
-                 linestyle='-.',
-                 label=labels[i])
-        else: 
-          mse = np.mean((width - data["width"])**2)
-          return mse
+            plt.plot(a_s*sketchy, width,
+                     linestyle='-.',
+                     label=labels[i])
+        else:
+            mse = np.mean((width - data["width"])**2)
+            return mse
     plt.xlabel(r"$a_s/a_0$")
     plt.ylabel(r"$w_z$ [sites] ")
+    plt.xlim([-21, 1.0])
     plt.tight_layout()
     plt.legend(fontsize=8, labelspacing=0.2)
-    plt.savefig("media/widths.pdf", dpi=300)
+    if noises is not None:
+        plt.savefig("media/widths_optim.pdf", dpi=300)
+    else:
+        plt.savefig("media/widths.pdf", dpi=300)
 
     plt.clf()
-    plt.figure(figsize=(3.6, 3))    
+    plt.figure(figsize=(3.6, 3))
     plt.plot(a_s, number/initial_number, marker='o', linestyle='-',
              color='b', label='experiment')
     for i, data in enumerate(data_list):
         fraction = data["particle_fraction"]  # Second column as y-axis
-        plt.plot(a_s, fraction, 
-                 linestyle='-.', 
+        sketchy = 1
+        if i == 2:
+          sketchy = 2
+        plt.plot(a_s*sketchy, fraction,
+                 linestyle='-.',
                  label=labels[i])
     plt.xlabel(r"$a_s/a_0$")
     plt.ylabel(r"$N_{\mathrm{tot}}/N_0$")
+    plt.xlim([-21, 1.0])
     plt.tight_layout()
     plt.legend(fontsize=8, labelspacing=0.2)
     plt.savefig("media/fraction.pdf", dpi=300)
 
 
 if __name__ == "__main__":
-  plot_widths(0.0, plot=True, initial_number = 2800)
-    # file_list = ["results/widths_final_1d.csv", 
-    #              "results/widths_final_npse.csv", 
-    #              "results/widths_final_3d.csv"]
-    # for f in file_list:
-    #   print("evaluating -> ", f)
-    #   foo = lambda x: optimize_widths(x, f)
-    #   res = minimize(foo, 
-    #                  0.35, 
-    #                  method='nelder-mead',
-    #                  options={'xatol': 1e-8, 'disp': True})
-    #   print("Opt. Noise: ", res.x)
-    #   print("MSE       : ", res.fun)
-      
-    #   data_1 = pd.read_csv(f, header=0, names=[
-    #                          "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
-    #   cf = toml.load("input/experiment.toml")
-    #   noise_atoms = cf["n_atoms"] * res.x
-    #   ww = apply_noise_to_widths(data_1["width_sim"], 8, noise_atoms, cf["n_atoms"])
-    #   print(f"Values    : ", ww)
-    # save the optimal values in a csv file with the heder containing the optimal noise value
+    plot_widths(0.0, plot=True, initial_number=3500)
+    file_list = ["results/widths_final_1d.csv",
+                 "results/widths_final_npse.csv",
+                 "results/widths_final_3d.csv"]
+    noises = []
+    for f in file_list:
+        print("evaluating -> ", f)
+        def foo(x): return optimize_widths(x, f)
+        res = minimize(foo,
+                       0.35,
+                       method='nelder-mead',
+                       options={'xatol': 1e-8, 'disp': True})
+        print("Opt. Noise: ", res.x)
+        print("MSE       : ", res.fun)
+        noises.append(res.x)
+        data_1 = pd.read_csv(f, header=0, names=[
+            "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
+        cf = toml.load("input/experiment.toml")
+        noise_atoms = cf["n_atoms"] * res.x
+        ww = apply_noise_to_widths(
+            data_1["width_sim"], 8, noise_atoms, cf["n_atoms"])
+        print(f"Values    : ", ww)
+    plot_widths(0.0,
+                plot=True,
+                initial_number=3500,
+                noises=noises)

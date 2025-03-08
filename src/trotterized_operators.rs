@@ -4,6 +4,7 @@ use log::debug;
 use ndarray::{Array1, Array3, Zip};
 use ndrustfft::Complex;
 use std::f64::consts::PI;
+use log::warn;
 /**
  Perform the linear propagation step in reciprocal space
  this include

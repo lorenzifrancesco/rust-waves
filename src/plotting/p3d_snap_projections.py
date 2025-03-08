@@ -28,7 +28,7 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
     dx = l_x[1]-l_x[0] 
     dy = l_y[1]-l_y[0] 
     dz = l_z[1]-l_z[0] 
-    print(f"Normalization: {np.sum(field)/(dx*dy*dz)}")
+    print(f"Normalization: {np.sum(field)*(dx*dy*dz)}")
     
     # Calculate projections
     xy = np.sum(field, axis=2)
@@ -39,48 +39,21 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
     vmin, vmax = np.nanmin(all_data), np.nanmax(all_data)
     vmax = min(2.0, abs(vmax))
     # Create a figure with three vertically stacked subplots
-    fig, axes = plt.subplots(3, 1, figsize=(3, 9))  # Adjust size for better aspect ratio
 
-    # # Plot the XY projection
-    # axes[0].imshow(xy, 
-    #                cmap="viridis", 
-    #                aspect="auto", 
-    #                interpolation ="bicubic")
-    # axes[0].set_title("XY Projection (Summed along Z)")
-    # axes[0].set_xlabel("X")
-    # axes[0].set_ylabel("Y")
-
-    # # Plot the XZ projection
-    # axes[1].imshow(xz, 
-    #                cmap="viridis", 
-    #                aspect="auto", 
-    #                interpolation="bicubic")
-    # axes[1].set_title("XZ Projection (Summed along Y)")
-    # axes[1].set_xlabel("X")
-    # axes[1].set_ylabel("Z")
-
-    # # Plot the YZ projection
-    # axes[2].imshow(yz, 
-    #                cmap="viridis", 
-    #                aspect="auto", 
-    #                interpolation="bicubic")
-    # axes[2].set_title("YZ Projection (Summed along X)")
-    # axes[2].set_xlabel("Y")
-    # axes[2].set_ylabel("Z")
     
     fig, axes = plt.subplots(1, 2, figsize=(6, 2.3), width_ratios=[3, 1])
     im1 = axes[0].imshow(xz.T,
                           aspect="auto", 
                           origin="lower", 
-                          cmap="gist_ncar", 
+                          cmap="nipy_spectral", 
                           interpolation=interpolation,
                           extent=[-params["l"]/2, params["l"]/2, -params["l_z"]/2, params["l_z"]/2],
                           vmin=vmin, vmax=vmax)
-    axes[0].set_aspect(2.2)
+    axes[0].set_aspect(0.5)
     im2 = axes[1].imshow(yz.T,
                           aspect="auto", 
                           origin="lower", 
-                          cmap="gist_ncar", 
+                          cmap="nipy_spectral", 
                           interpolation=interpolation,
                           extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2], 
                           vmin=vmin, vmax=vmax)
@@ -100,7 +73,9 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
     output_file = f"media/idx-{i}_heatmap_3d.png"
     plt.savefig(output_file, dpi=900)
     print(f"Saved 3D projections as '{output_file}'.")
-    
+
+
+
 def movie(name, i = -1):
     path = "results/"+name+".h5"
     t, frames = load_hdf5_data(path)
@@ -149,7 +124,7 @@ def create_gif(t, frames, output_filename="movie.gif"):
                            interpolation=interpolation,
                            extent=[-params["l"]/2, params["l"]/2, -params["l_z"]/2, params["l_z"]/2],
                            vmin=vmin, vmax=vmax)
-      axes[0].set_aspect(0.9)
+      axes[0].set_aspect(0.5)
       im2 = axes[1].imshow(yz.T,
                            aspect="equal", 
                            origin="lower", 
@@ -185,6 +160,7 @@ def create_gif(t, frames, output_filename="movie.gif"):
   print(f"Saved GIF: {output_filename}")
   
 if __name__ == "__main__":
-  num = 0
-  movie(f"dyn_idx-{num}_3d", num)
+  num = -77
+  # movie(f"dyn_idx-{num}_3d", num)
+  movie(f"dyn_check_3d", num)
   # plot_projections(["pre-quench_3d"])

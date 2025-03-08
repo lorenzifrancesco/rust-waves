@@ -126,8 +126,10 @@ def write_from_experiment(
       p.g5 = float(g5) 
     else: 
       p.im_t = True
-      p.t = 50.0
+      p.t = 20.0
       p.g5 = 0.0 
+      p.w = 1.5
+
     p.write(output_filename)
     return
 

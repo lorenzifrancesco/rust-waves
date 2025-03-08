@@ -9,10 +9,10 @@ import pandas
 from p1d_dyn_heatmap import *
 from p3d_snap_projections import *
 
-data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"])
+data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
 recompute = True
-plotting_evolution = False
+plotting_evolution = True
 # dimension
 default = Params.read("input/default.toml")
 d = default.dimension
@@ -30,7 +30,7 @@ write_from_experiment("input/experiment_pre_quench.toml",
                      "input/params.toml",
                      "pre-quench",
                      a_s = 20.0,
-                     load_gs=False)
+                     load_gs = False)
 l = Simulation(input_params="input/params.toml",
                output_file="results/",
                rust="./target/release/rust_waves",
@@ -55,11 +55,11 @@ for i, a_s in enumerate(params):
                         f"idx-{i}", 
                         a_s=a_s, 
                         load_gs=True)
-  # exit() # save the zero simulation
   l = Simulation(input_params="input/params.toml",
                output_file="results/",
                rust="./target/release/rust_waves",
-               dimension=3)
+               dimension=d)
+  # exit() # save the zero simulation
   if not os.path.exists(f"results/idx-{i}_{d}d.h5") or recompute:
     print("Computing wavefunction for ", f"results/idx-{i}_{d}d.h5")
     l.run()
@@ -91,5 +91,5 @@ else:
 print("Plotting...")
 plot_widths(noise=0.0, 
             plot=True,
-            initial_number=2800)
+            initial_number=3000)
 print("Done!")

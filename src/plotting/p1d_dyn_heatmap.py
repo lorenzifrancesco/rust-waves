@@ -21,6 +21,7 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1):
   plt.ylabel(r"$x$")
   plt.tight_layout()
   plt.savefig(f"media/idx-{i}_heatmap.png", dpi=600)
+  print(f"Saved 1D heatmap as 'media/idx-{i}_heatmap.png'.")
 
 def plot_heatmap(filename):
     # Initialize lists to store the data
@@ -119,5 +120,5 @@ def plot_snap(filename, i=-1):
 if __name__ == "__main__":
   print("____ Plotting _____")
   # plot_heatmap_h5()
-  plot_first_last()
-  # plot_heatmap('results/1d_psi.h5')
+  # plot_first_last()
+  plot_heatmap_h5('results/dyn_check-np_1d.h5')
