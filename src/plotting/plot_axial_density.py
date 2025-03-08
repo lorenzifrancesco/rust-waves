@@ -82,19 +82,27 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"]):
   
 if __name__ == "__main__":
   
-  fig, ax = init_plotting()
-  num = 9
-  plot_1d_axial_density(fig, ax, name_list=[f"width-check_1d"])
-  plot_3d_axial_density(fig, ax, name_list=[f"width-check_3d"])
-  plt.savefig("media/axial_density.png", dpi=900)
-  width_from_wavefunction(f"width-check", dimensions=1)
-  width_from_wavefunction(f"width-check", dimensions=3)
-  exit()
+  # fig, ax = init_plotting()
+  # num = 9
+  # plot_1d_axial_density(fig, ax, name_list=[f"width-check_1d"])
+  # plot_3d_axial_density(fig, ax, name_list=[f"width-check_3d"])
+  # plt.grid(True, which='major', linestyle='-', color='black', alpha=0.4)
+  # plt.grid(True, which='minor', linestyle=':', color='gray', alpha=0.3)
+  # plt.xlim([-3, 3])
+  # plt.minorticks_on()  
+  # plt.savefig("media/axial_density.png", dpi=900)
+  # width_from_wavefunction(f"width-check", dimensions=1)
+  # width_from_wavefunction(f"width-check", dimensions=3)
+  # exit()
   
   fig, ax = init_plotting()
   num = 8
   plot_1d_axial_density(fig, ax, name_list=[f"idx-{num}_1d"])
   plot_3d_axial_density(fig, ax, name_list=[f"idx-{num}_3d"])
+  plt.grid(True, which='major', linestyle='-', color='black', lw=0.4, alpha=0.4)
+  plt.grid(True, which='minor', linestyle=':', color='gray' , lw=0.4, alpha=0.3)
+  plt.xlim([-5, 5])
+  plt.minorticks_on()  
   plt.savefig("media/axial_density.png", dpi=900)
   print(width_from_wavefunction(f"idx-{num}", dimensions=1))
   print(width_from_wavefunction(f"idx-{num}", dimensions=3))

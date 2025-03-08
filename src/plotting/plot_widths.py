@@ -135,7 +135,7 @@ def plot_widths(noise=0.0,
         # print("after: \n ", width)
         sketchy = 1
         if i == 2:
-          sketchy = 2
+          sketchy = 1
         if plot:
             plt.plot(a_s*sketchy, width,
                      linestyle='-.',
@@ -150,9 +150,10 @@ def plot_widths(noise=0.0,
     plt.legend(fontsize=8, labelspacing=0.2)
     if noises is not None:
         plt.savefig("media/widths_optim.pdf", dpi=300)
+        print("Saved media/widths_optim.pdf")
     else:
         plt.savefig("media/widths.pdf", dpi=300)
-
+        print("Saved media/widths.pdf")
     plt.clf()
     plt.figure(figsize=(3.6, 3))
     plt.plot(a_s, number/initial_number, marker='o', linestyle='-',
@@ -161,7 +162,7 @@ def plot_widths(noise=0.0,
         fraction = data["particle_fraction"]  # Second column as y-axis
         sketchy = 1
         if i == 2:
-          sketchy = 2
+          sketchy = 1
         plt.plot(a_s*sketchy, fraction,
                  linestyle='-.',
                  label=labels[i])
@@ -171,13 +172,14 @@ def plot_widths(noise=0.0,
     plt.tight_layout()
     plt.legend(fontsize=8, labelspacing=0.2)
     plt.savefig("media/fraction.pdf", dpi=300)
+    print("Saved media/fraction.pdf")
 
 
 if __name__ == "__main__":
-    print(width_from_wavefunction("idx-9", dimensions=1))
-    print(width_from_wavefunction("idx-9", dimensions=3))
+    # print(width_from_wavefunction("idx-9", dimensions=1))
+    # print(width_from_wavefunction("idx-9", dimensions=3))
     
-    exit()
+    # exit()
     plot_widths(0.0, plot=True, initial_number=3500)
     file_list = ["results/widths_final_1d.csv",
                  "results/widths_final_npse.csv",
