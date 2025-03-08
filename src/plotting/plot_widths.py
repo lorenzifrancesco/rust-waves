@@ -29,8 +29,7 @@ def width_from_wavefunction(title, dimensions=1):
         dz = l[1] - l[0]
         particle_fraction = np.sum(final_psi2[mask]) * dz
         center = np.sum(l[mask] * final_psi2[mask]) / particle_fraction
-        std = np.sqrt(dz * np.sum(l[mask]**2 * final_psi2[mask]) -
-                      np.sum(l[mask] * final_psi2[mask])**2 / particle_fraction)
+        std = np.sqrt(dz * np.sum(l[mask]**2 * final_psi2[mask]) - center**2)
         print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
     else:
         with h5py.File(filename, "r") as f:
@@ -45,10 +44,11 @@ def width_from_wavefunction(title, dimensions=1):
         dz = l_z[1] - l_z[0]
         dV = dx * dy * dz
         particle_fraction = np.sum(psi_squared[mask, :, :]) * dV
-        x_mean = np.sum(l_x[mask, None, None] *
+        center = np.sum(l_x[mask, None, None] *
                         psi_squared[mask, :, :]) * dV / particle_fraction
         std = np.sqrt(np.sum(
-            l_x[mask, None, None]**2 * psi_squared[mask, :, :]) * dV / particle_fraction - x_mean**2)
+            l_x[mask, None, None]**2 * psi_squared[mask, :, :]) * dV / particle_fraction - center**2)
+        print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
 
     if np.isnan(particle_fraction):
         particle_fraction = 0
@@ -174,6 +174,10 @@ def plot_widths(noise=0.0,
 
 
 if __name__ == "__main__":
+    print(width_from_wavefunction("idx-9", dimensions=1))
+    print(width_from_wavefunction("idx-9", dimensions=3))
+    
+    exit()
     plot_widths(0.0, plot=True, initial_number=3500)
     file_list = ["results/widths_final_1d.csv",
                  "results/widths_final_npse.csv",

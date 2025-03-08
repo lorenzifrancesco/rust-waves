@@ -1,18 +1,12 @@
-use hdf5_metno;
-use log::debug;
-use log::{info, Level};
-use rust_waves::io::{save_1d_wavefunction, save_3d_wavefunction};
-use rust_waves::propagate::{propagate_1d, propagate_3d};
+use rust_waves::io::save_1d_wavefunction;
+use rust_waves::propagate::propagate_1d;
 use rust_waves::tools::{
-    gaussian, gaussian_3d, gaussian_normalized, normalization_factor_1d, normalization_factor_3d,
+    gaussian_normalized, normalization_factor_1d,
     sech_normalized, symmetric_range,
 };
-use rust_waves::types::{Dynamics3D, Params, Wavefunction1D, Wavefunction3D};
+use rust_waves::types::{Params, Wavefunction1D};
 use std::fs;
-use std::fs::File;
-use std::io::Write;
 use std::path::Path;
-use std::time::Instant;
 use toml;
 
 #[test]

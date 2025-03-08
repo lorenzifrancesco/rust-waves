@@ -2,6 +2,7 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 import toml
+from plot_widths import width_from_wavefunction
 
 def init_plotting():
   fig, ax = plt.subplots(1, 1, figsize=(4, 2.2), dpi=600)
@@ -80,6 +81,26 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"]):
     return fig, ax
   
 if __name__ == "__main__":
+  
+  fig, ax = init_plotting()
+  num = 9
+  plot_1d_axial_density(fig, ax, name_list=[f"width-check_1d"])
+  plot_3d_axial_density(fig, ax, name_list=[f"width-check_3d"])
+  plt.savefig("media/axial_density.png", dpi=900)
+  width_from_wavefunction(f"width-check", dimensions=1)
+  width_from_wavefunction(f"width-check", dimensions=3)
+  exit()
+  
+  fig, ax = init_plotting()
+  num = 8
+  plot_1d_axial_density(fig, ax, name_list=[f"idx-{num}_1d"])
+  plot_3d_axial_density(fig, ax, name_list=[f"idx-{num}_3d"])
+  plt.savefig("media/axial_density.png", dpi=900)
+  print(width_from_wavefunction(f"idx-{num}", dimensions=1))
+  print(width_from_wavefunction(f"idx-{num}", dimensions=3))
+  
+  exit()
+  # SPR consistency check
   cnt = 0
   fig, ax = init_plotting()
   for name in ["check_1d", "check-np_1d"]:

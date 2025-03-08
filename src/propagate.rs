@@ -1,11 +1,10 @@
 use crate::tools::*;
 use crate::types::*;
 use log::*;
-use ndarray::{Array2, Array3};
+use ndarray::Array2;
 use ndrustfft::Complex;
 use ndrustfft::{ndfft_par, ndifft_par, FftHandler};
 use rustfft;
-use std::f64::INFINITY;
 use std::f64::consts::PI;
 use std::time::Instant;
 use std::vec;
@@ -61,8 +60,9 @@ pub fn propagate_1d(
         .collect();
     for it in 0..params.options.n_saves {
         saved_psi.t[it] = t_axis[it];
-        saved_psi.psi[it] = Wavefunction1D::new(vec![I; n_l], psi0.l.clone());
+        saved_psi.psi[it] = psi0.clone();
     }
+    // warn!("we are overwriting the first element in saved_psi");
     ns = normalization_factor_1d(psi0);
     assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
     let mut save_interval = (n_t as f64 / params.options.n_saves as f64).round() as u32;
@@ -71,7 +71,6 @@ pub fn propagate_1d(
         save_interval = 1;
         info!("Using save_interval = 1");
     }
-    warn!("we are overwriting the first element in saved_psi");
     let mut cnt = 0;
     for idt in 0..n_t {
         fft.process(&mut psi0.field);
@@ -238,9 +237,6 @@ pub fn propagate_3d(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::Array3;
-    use rand::Rng;
-    use rustfft::num_complex;
     // TODO create some actually testable functions for the transforms
     #[test]
     fn involution_1d() {

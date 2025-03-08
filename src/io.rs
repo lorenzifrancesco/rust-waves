@@ -1,15 +1,12 @@
-use crate::types::{Dynamics1D, Dynamics3D, View3D};
+use crate::types::Dynamics1D;
 use crate::types::{Wavefunction1D, Wavefunction3D};
 use hdf5_metno;
 use log::debug;
 use log::info;
-use ndarray::{Array1, Array2, Array3, Dim};
-use std::fs::File;
-use std::io::{self, Read, Write};
+use ndarray::{Array2, Array3};
 use ndarray::Axis;
 use std::error::Error;
 use ndrustfft;
-use rustfft;
 
 pub fn save_1d_wavefunction(
     wavefunction: &Wavefunction1D,

@@ -1,4 +1,3 @@
-use crate::propagate::I;
 use crate::types::{Wavefunction1D, Wavefunction3D};
 use log::warn;
 use ndarray::{Array1, Array3, Zip};
@@ -58,7 +57,7 @@ pub fn gaussian_3d(
                 let dz = z - mean.2;
                 let gaussian_value = (1.0 / ((2.0 * PI).sqrt())).powi(3)
                     * (-((dx / sigma.0).powi(2) + (dy / sigma.1).powi(2) + (dz / sigma.2).powi(2))
-                        / (2.0))
+                        / (4.0))
                         .exp();
                 array[[ix, iy, iz]].re = gaussian_value;
                 array[[ix, iy, iz]].im = 0.0;

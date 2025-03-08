@@ -1,4 +1,3 @@
-use ndrustfft::Complex;
 use rust_waves::io::{
     load_1d_wavefunction, load_3d_wavefunction, save_1d_dynamics, save_1d_wavefunction,
     save_3d_wavefunction,
@@ -7,7 +6,6 @@ use rust_waves::propagate::*;
 use rust_waves::tools::*;
 use rust_waves::types::*;
 
-use std::process::Output;
 use std::time::Instant;
 
 // IO
@@ -15,7 +13,7 @@ use std::fs;
 use std::path::Path;
 
 // Logging
-use log::{debug, info, warn, Level};
+use log::{debug, info, Level};
 use simple_logger;
 
 fn main() {
@@ -58,7 +56,7 @@ fn simulation_1d(params: &Params) {
             l: l_range.clone(),
         };
     }
-    let initial_wave_for_save = initial_wave.clone();
+    // let initial_wave_for_save = initial_wave.clone();
     assert!(
         normalization_factor_1d(&initial_wave) - 1.0 < 1e-10,
         "The wavefunction is not normalized"
