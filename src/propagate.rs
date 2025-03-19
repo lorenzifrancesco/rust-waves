@@ -26,8 +26,10 @@ pub fn propagate_1d(
         info!("Imaginary time propagation");
         h_t.im = -params.numerics.dt;
     } else {
+        info!("Real time propagation");
         h_t.re = params.numerics.dt;
     }
+    debug!("ht = {} ", h_t);
     let n_t = ((*params).physics.t / params.numerics.dt).round() as u32;
     debug!("Running using n_t = {}, and ht = {}", n_t, h_t.norm());
     let g = (*params).physics.g;
@@ -44,6 +46,7 @@ pub fn propagate_1d(
       params.physics.l_harm_x, 
       params.physics.v0,
       params.physics.dl);
+    
     // Plan the transforms
     let mut planner: rustfft::FftPlanner<f64> = rustfft::FftPlanner::<f64>::new();
     let fft = planner.plan_fft_forward(n_l);
@@ -98,10 +101,13 @@ pub fn propagate_1d(
         // }
         // println!("=======")
         if idt % save_interval == 0 {
-            for i in 0..n_l {
-                saved_psi.psi[cnt].field[i] = psi0.field[i];
-            }
-            cnt += 1;
+          if cnt >= params.options.n_saves {
+              break;
+          }
+          for i in 0..n_l {
+              saved_psi.psi[cnt].field[i] = psi0.field[i];
+          }
+          cnt += 1;
         }
     }
     saved_psi

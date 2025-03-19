@@ -22,12 +22,12 @@ class Simulation:
   rust_mode: str 
   dimension: int
 
-  def __init__(self, input_params, output_file, rust, rust_mode="release", dimension=3):
+  def __init__(self, input_params, output_file, rust, rust_mode="release"):
     self.input_params = input_params
     self.output_file = output_file
     self.rust = rust
     self.rust_mode = rust_mode
-    self.dimension = dimension
+    self.dimension = toml.load(self.input_params)["physics"]["dimension"]
  
   def compile(self, rust_mode):
     if rust_mode == "debug":
@@ -44,10 +44,14 @@ class Simulation:
   def run(self):
     print("Running...")
     result = subprocess.run(
-            [self.rust], text=True, stdout=subprocess.PIPE, capture_output=False)
+            [self.rust], 
+            text=True, 
+            stdout=subprocess.PIPE, 
+            capture_output=False, 
+            check=True)
     print("Done.")
     return
-  
+ 
 if __name__ == "__main__":
   l = Simulation(input_params="input/params.toml",
                  output_file="results/",

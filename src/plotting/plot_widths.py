@@ -79,7 +79,8 @@ def plot_widths(noise=0.0,
                 plot=False,
                 initial_number=2000,
                 eqs=["1d", "npse", "3d"],
-                noises=None):
+                noises=None, 
+                case=""):
     """
     Confrontation with the experimental data
     """
@@ -87,7 +88,7 @@ def plot_widths(noise=0.0,
     data_list = []
     labels = []
     try:
-        data_1 = pd.read_csv("results/widths_final_1d.csv", header=0, names=[
+        data_1 = pd.read_csv("results/widths/widths_final_1d"+case+".csv", header=0, names=[
                              "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
         if "1d" in eqs:
             data_list.append(data_1)
@@ -95,7 +96,7 @@ def plot_widths(noise=0.0,
     except:
         print("No 1D data")
     try:
-        data_npse = pd.read_csv("results/widths_final_npse.csv", header=0, names=[
+        data_npse = pd.read_csv("results/widths/widths_final_npse"+case+".csv", header=0, names=[
                                 "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
         if "npse" in eqs:
             data_list.append(data_npse)
@@ -103,7 +104,7 @@ def plot_widths(noise=0.0,
     except:
         print("No NPSE data")
     try:
-        data_3 = pd.read_csv("results/widths_final_3d.csv", header=0, names=[
+        data_3 = pd.read_csv("results/widths/widths_final_3d"+case+".csv", header=0, names=[
                              "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
         if "3d" in eqs:
             data_list.append(data_3)
@@ -127,6 +128,8 @@ def plot_widths(noise=0.0,
     l = 8  # lattice sites
     for i, data in enumerate(data_list):
         width = data["width_sim"]
+        a_s = data["a_s"]
+        print(len(a_s))
         if noises is not None:
             noise_atoms = n_atoms * noises[i]
 
@@ -149,21 +152,26 @@ def plot_widths(noise=0.0,
     plt.tight_layout()
     plt.legend(fontsize=8, labelspacing=0.2)
     if noises is not None:
-        plt.savefig("media/widths_optim.pdf", dpi=300)
-        print("Saved media/widths_optim.pdf")
+        plt.savefig("media/widths_optim"+case+".pdf", dpi=300)
+        print("Saved media/widths_optim"+case+".pdf")
     else:
-        plt.savefig("media/widths.pdf", dpi=300)
-        print("Saved media/widths.pdf")
+        plt.savefig("media/widths"+case+".pdf", dpi=300)
+        print("Saved media/widths"+case+".pdf")
+        
     plt.clf()
     plt.figure(figsize=(3.6, 3))
+    data = pd.read_csv("input/widths.csv", names=["a_s", "width", "number"])
+    a_s = data["a_s"]  # First column as x-axis
+    width = data["width"]  # Second column as y-axis
     plt.plot(a_s, number/initial_number, marker='o', linestyle='-',
              color='b', label='experiment')
     for i, data in enumerate(data_list):
         fraction = data["particle_fraction"]  # Second column as y-axis
+        a_s = data["a_s"] 
         sketchy = 1
         if i == 2:
           sketchy = 1
-        plt.plot(a_s*sketchy, fraction,
+        plt.plot(a_s * sketchy, fraction,
                  linestyle='-.',
                  label=labels[i])
     plt.xlabel(r"$a_s/a_0$")
@@ -171,8 +179,8 @@ def plot_widths(noise=0.0,
     plt.xlim([-21, 1.0])
     plt.tight_layout()
     plt.legend(fontsize=8, labelspacing=0.2)
-    plt.savefig("media/fraction.pdf", dpi=300)
-    print("Saved media/fraction.pdf")
+    plt.savefig("media/fraction"+case+".pdf", dpi=300)
+    print("Saved media/fraction"+case+".pdf")
 
 
 if __name__ == "__main__":
@@ -180,7 +188,9 @@ if __name__ == "__main__":
     # print(width_from_wavefunction("idx-9", dimensions=3))
     
     # exit()
-    plot_widths(0.0, plot=True, initial_number=3500)
+    plot_widths(0.0, 
+                plot=True, 
+                initial_number=3000)
     file_list = ["results/widths_final_1d.csv",
                  "results/widths_final_npse.csv",
                  "results/widths_final_3d.csv"]

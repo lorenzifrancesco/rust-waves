@@ -64,7 +64,7 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
     axes[0].set_ylabel(r"$z$")
     axes[1].set_xlabel(r"$y$")
     axes[1].set_ylabel(r"$z$")
-    
+ 
     # plt.colorbar(im1, ax=axes[0])
     # plt.colorbar(im2, ax=axes[1])
     plt.tight_layout()
@@ -81,7 +81,7 @@ def movie(name, i = -1):
     t, frames = load_hdf5_data(path)
     output_file = f"media/idx-{i}_heatmap_3d.gif"
     create_gif(t, frames, output_file)
-    
+
 def load_hdf5_data(filename):
   """Load HDF5 file and extract projections."""
   with h5py.File(filename, "r") as f:
@@ -109,9 +109,9 @@ def create_gif(t, frames, output_filename="movie.gif"):
   params = par["numerics"]
   all_data = np.array([np.concatenate((xz.flatten(), yz.flatten())) for xz, yz in frames[:95]])
   vmin, vmax = np.nanmin(all_data), np.nanmax(all_data)
-  vmax = min(2.0, abs(vmax))
-  cmap = "nipy_spectral"
-  interpolation = "bicubic"
+  vmax = min(100.0, abs(vmax))
+  cmap = "turbo"
+  interpolation = "none"
   
   print()
   for i, (xz, yz) in enumerate(frames):
@@ -161,7 +161,4 @@ def create_gif(t, frames, output_filename="movie.gif"):
   print(f"Saved GIF: {output_filename}")
   
 if __name__ == "__main__":
-  num = 0
-  # movie(f"dyn_idx-{num}_3d", num)
-  movie(f"dyn_idx-0_3d", num)
-  # plot_projections(["pre-quench_3d"])
+  movie("dyn_linear_3d", -1)

@@ -1,8 +1,10 @@
 use crate::propagate::I;
 use crate::types::{Wavefunction1D, Wavefunction3D};
+use log::debug;
 use ndarray::{Array1, Array3, Zip};
 use ndrustfft::Complex;
 use std::f64::consts::PI;
+
 /**
  Perform the linear propagation step in reciprocal space
  this include
@@ -73,7 +75,8 @@ pub fn linear_step_3d(kvec: &mut Wavefunction3D, k_range_squared: &Array3<f64>, 
     //     .zip(k_range_squared.iter())
     //     .for_each(|(x, y)| *x *= (-I * dt * 1. / 2. * y).exp());
     for ((ix, iy, iz), psi) in kvec.field.indexed_iter_mut() {
-        *psi *= (-I * dt * 1. / 2. * k_range_squared[[ix, iy, iz]]).exp();
+        *psi *= (-I * dt * 1. / 2. * k_range_squared[[ix, iy, iz]])
+                .exp();
     }
 }
 
@@ -91,9 +94,12 @@ pub fn nonlinear_step_3d(
     g5: f64,
 ) {
     xvec.field.iter_mut().for_each(|x| {
-        *x *= (-I * dt * ((-I * g5 * x.norm_sqr() + 2.0 * PI * g) * x.norm_sqr())).exp()
+        *x *= (-I * dt * ((-I * g5 * x.norm_sqr() + 2.0 * PI * g) * x.norm_sqr()))
+              .exp();
     });
-    Zip::indexed(&mut xvec.field).for_each(|(i, j, k), x| *x *= (-I * dt * v0[[i, j, k]]).exp());
+    Zip::indexed(&mut xvec.field)
+    .for_each(|(i, j, k), x| *x *= (-I * dt * v0[[i, j, k]])
+    .exp());
 }
 
 #[cfg(test)]
