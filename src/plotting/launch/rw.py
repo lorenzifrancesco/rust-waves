@@ -102,7 +102,8 @@ def write_from_experiment(
     print(a0)
     l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
     e_perp = hbar * ex["omega_perp"]
-    t_perp = ex["omega_perp"]**(-1) * 2 * pi 
+    t_perp = ex["omega_perp"]**(-1) * 2 * pi # FIXME CHECK  
+    t_perp = ex["omega_perp"]**(-1) # FIXME CHECK  
     
     print("WARN: using the right Er")
     e_recoil = (pi * hbar / ex["d"])**2 / (2 * ex["m"])

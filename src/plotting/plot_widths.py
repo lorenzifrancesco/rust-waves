@@ -13,6 +13,9 @@ from launch.rw import Params
 from scipy.optimize import minimize
 
 
+"""
+Data processing from final snapshots to get the width and particle fraction  
+"""
 def width_from_wavefunction(title, dimensions=1):
     filename = "".join(["results/", title, "_", str(dimensions), "d.h5"])
     print("Computing wavefunction for ", filename)
@@ -28,8 +31,14 @@ def width_from_wavefunction(title, dimensions=1):
         # print(mask)
         dz = l[1] - l[0]
         particle_fraction = np.sum(final_psi2[mask]) * dz
-        center = np.sum(l[mask] * final_psi2[mask]) / particle_fraction
-        std = np.sqrt(dz * np.sum(l[mask]**2 * final_psi2[mask]) - center**2)
+        print(f"particle fraction = {particle_fraction}")
+        center = dz * np.sum(l[mask] * final_psi2[mask]) / particle_fraction
+        std = np.sqrt(dz * 
+                      np.sum(
+                        l[mask]**2 * final_psi2[mask]
+                        )/particle_fraction - center**2)
+        # now we overwrite with the total particle fraction
+        particle_fraction = np.sum(final_psi2) * dz
         print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
     else:
         with h5py.File(filename, "r") as f:
@@ -44,10 +53,14 @@ def width_from_wavefunction(title, dimensions=1):
         dz = l_z[1] - l_z[0]
         dV = dx * dy * dz
         particle_fraction = np.sum(psi_squared[mask, :, :]) * dV
-        center = np.sum(l_x[mask, None, None] *
-                        psi_squared[mask, :, :]) * dV / particle_fraction
-        std = np.sqrt(np.sum(
-            l_x[mask, None, None]**2 * psi_squared[mask, :, :]) * dV / particle_fraction - center**2)
+        print(f"particle fraction = {particle_fraction}")
+        center = np.sum(l_x[mask, None, None] * psi_squared[mask, :, :]) * dV / particle_fraction
+        std = np.sqrt(dV * 
+                  np.sum(
+                    l_x[mask, None, None]**2 * psi_squared[mask, :, :]
+                    ) / particle_fraction - center**2)
+        # now we overwrite with the total particle fraction
+        particle_fraction = np.sum(psi_squared)* dV
         print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
 
     if np.isnan(particle_fraction):
@@ -75,6 +88,9 @@ def optimize_widths(noise, file):
     return mse
 
 
+"""
+Plotting loading the CSV files with the widths and the particle fraction
+"""
 def plot_widths(noise=0.0,
                 plot=False,
                 initial_number=2000,
@@ -111,13 +127,15 @@ def plot_widths(noise=0.0,
         labels.append("3D")
     except:
         print("No 3D data")
+    
+    linestyle = ['-.', ':', '-', ':']
     # Extract columns
     a_s = data["a_s"]  # First column as x-axis
     width = data["width"]  # Second column as y-axis
     number = data["number"]
     # Create the plot
     plt.figure(figsize=(3.6, 3))
-    plt.plot(a_s, width, marker='o', linestyle='-',
+    plt.plot(a_s, width, marker='+', linestyle='-', lw=0.5,
              color='b', label='experiment')
     cf = toml.load("input/experiment.toml")
     n_atoms = cf["n_atoms"]
@@ -129,7 +147,6 @@ def plot_widths(noise=0.0,
     for i, data in enumerate(data_list):
         width = data["width_sim"]
         a_s = data["a_s"]
-        print(len(a_s))
         if noises is not None:
             noise_atoms = n_atoms * noises[i]
 
@@ -141,8 +158,9 @@ def plot_widths(noise=0.0,
           sketchy = 1
         if plot:
             plt.plot(a_s*sketchy, width,
-                     linestyle='-.',
-                     label=labels[i])
+                     label=labels[i],
+                     linestyle=linestyle[i], 
+                     lw=0.7)
         else:
             mse = np.mean((width - data["width"])**2)
             return mse
@@ -158,13 +176,18 @@ def plot_widths(noise=0.0,
         plt.savefig("media/widths"+case+".pdf", dpi=300)
         print("Saved media/widths"+case+".pdf")
         
+    ## Plotting the particle fraction
     plt.clf()
     plt.figure(figsize=(3.6, 3))
     data = pd.read_csv("input/widths.csv", names=["a_s", "width", "number"])
     a_s = data["a_s"]  # First column as x-axis
     width = data["width"]  # Second column as y-axis
-    plt.plot(a_s, number/initial_number, marker='o', linestyle='-',
-             color='b', label='experiment')
+    # plt.plot(a_s, number/initial_number, 
+    #          marker='+', 
+    #          linestyle='-', 
+    #          lw = 0.5,
+    #          color='b', 
+    #          label='experiment')
     for i, data in enumerate(data_list):
         fraction = data["particle_fraction"]  # Second column as y-axis
         a_s = data["a_s"] 
@@ -172,8 +195,9 @@ def plot_widths(noise=0.0,
         if i == 2:
           sketchy = 1
         plt.plot(a_s * sketchy, fraction,
-                 linestyle='-.',
-                 label=labels[i])
+                 linestyle=linestyle[i],
+                 label=labels[i], 
+                 lw=0.7)
     plt.xlabel(r"$a_s/a_0$")
     plt.ylabel(r"$N_{\mathrm{tot}}/N_0$")
     plt.xlim([-21, 1.0])
@@ -191,28 +215,28 @@ if __name__ == "__main__":
     plot_widths(0.0, 
                 plot=True, 
                 initial_number=3000)
-    file_list = ["results/widths_final_1d.csv",
-                 "results/widths_final_npse.csv",
-                 "results/widths_final_3d.csv"]
-    noises = []
-    for f in file_list:
-        print("evaluating -> ", f)
-        def foo(x): return optimize_widths(x, f)
-        res = minimize(foo,
-                       0.35,
-                       method='nelder-mead',
-                       options={'xatol': 1e-8, 'disp': True})
-        print("Opt. Noise: ", res.x)
-        print("MSE       : ", res.fun)
-        noises.append(res.x)
-        data_1 = pd.read_csv(f, header=0, names=[
-            "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
-        cf = toml.load("input/experiment.toml")
-        noise_atoms = cf["n_atoms"] * res.x
-        ww = apply_noise_to_widths(
-            data_1["width_sim"], 8, noise_atoms, cf["n_atoms"])
-        print(f"Values    : ", ww)
-    plot_widths(0.0,
-                plot=True,
-                initial_number=3000,
-                noises=noises)
+    # file_list = ["results/widths_final_1d.csv",
+    #              "results/widths_final_npse.csv",
+    #              "results/widths_final_3d.csv"]
+    # noises = []
+    # for f in file_list:
+    #     print("evaluating -> ", f)
+    #     def foo(x): return optimize_widths(x, f)
+    #     res = minimize(foo,
+    #                    0.35,
+    #                    method='nelder-mead',
+    #                    options={'xatol': 1e-8, 'disp': True})
+    #     print("Opt. Noise: ", res.x)
+    #     print("MSE       : ", res.fun)
+    #     noises.append(res.x)
+    #     data_1 = pd.read_csv(f, header=0, names=[
+    #         "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
+    #     cf = toml.load("input/experiment.toml")
+    #     noise_atoms = cf["n_atoms"] * res.x
+    #     ww = apply_noise_to_widths(
+    #         data_1["width_sim"], 8, noise_atoms, cf["n_atoms"])
+    #     print(f"Values    : ", ww)
+    # plot_widths(0.0,
+    #             plot=True,
+    #             initial_number = 1700,
+    #             noises=noises)

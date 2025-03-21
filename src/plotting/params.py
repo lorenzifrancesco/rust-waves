@@ -45,7 +45,7 @@ def continuously_update_screen():
                 
                 l.compile("release")
                 
-                # l.run()
+                l.run()
                 
                 after_run(l)
                 

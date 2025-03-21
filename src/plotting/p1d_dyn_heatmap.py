@@ -158,7 +158,7 @@ def plot_heatmap_h5_3d(name="1d", i=-1):
   # ax_lineplot.legend(loc="upper right")
   fig.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.15)
 
-  heatmap_filename = "media/td_heatmap_3d.pdf"
+  heatmap_filename = "media/3d_heatmap_idx-"+str(i)+".pdf"
   plt.savefig(heatmap_filename, dpi=300, pad_inches=0.1)
   plt.close()
   print(f"Heatmap saved as {heatmap_filename}")
@@ -304,5 +304,5 @@ if __name__ == "__main__":
   # plt.tight_layout()
   # plt.show()
   # plot_heatmap_h5_3d('dyn_idx-26_3d')
-  plot_heatmap_h5_3d('dyn_test_3d')
-  
+  # plot_heatmap_h5_3d('dyn_idx-12_3d')
+  plot_heatmap_h5('results/dyn_idx-12_1d.h5', -1)

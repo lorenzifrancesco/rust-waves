@@ -104,20 +104,24 @@ def create_gif(t, frames, output_filename="movie.gif"):
   """Generate and save a GIF from the projection heatmaps."""
   images = []
   
-  fig, axes = plt.subplots(1, 2, figsize=(6, 2.2), width_ratios=[4, 1.5], dpi=600)
+  # two figures
+  # fig, axes = plt.subplots(1, 2, figsize=(6, 2.2), width_ratios=[4, 1.5], dpi=600)
+  # single figure
+  fig, ax = plt.subplots(figsize=(6, 2.2), dpi=600)
+  axes = [ax]
   par = toml.load("input/params.toml")
   params = par["numerics"]
   all_data = np.array([np.concatenate((xz.flatten(), yz.flatten())) for xz, yz in frames[:95]])
   vmin, vmax = np.nanmin(all_data), np.nanmax(all_data)
   vmax = min(100.0, abs(vmax))
-  cmap = "turbo"
-  interpolation = "none"
+  cmap = "nipy_spectral"
+  interpolation = "bicubic"
   
   print()
   for i, (xz, yz) in enumerate(frames):
       print(f"\rplotting frame {i:>10d}", end="")
       axes[0].clear()
-      axes[1].clear()
+      # axes[1].clear()
       im1 = axes[0].imshow(xz.T,
                            aspect="auto", 
                            origin="lower", 
@@ -126,24 +130,24 @@ def create_gif(t, frames, output_filename="movie.gif"):
                            extent=[-params["l"]/2, params["l"]/2, -params["l_z"]/2, params["l_z"]/2],
                            vmin=vmin, vmax=vmax)
       axes[0].set_aspect(0.5)
-      im2 = axes[1].imshow(yz.T,
-                           aspect="equal", 
-                           origin="lower", 
-                           cmap=cmap, 
-                           interpolation=interpolation,
-                           extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2], 
-                           vmin=vmin, vmax=vmax)
+      # im2 = axes[1].imshow(yz.T,
+      #                      aspect="equal", 
+      #                      origin="lower", 
+      #                      cmap=cmap, 
+      #                      interpolation=interpolation,
+      #                      extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2], 
+      #                      vmin=vmin, vmax=vmax)
       
       axes[0].set_title(rf"$xz \; (t = {t[i]:.1f} t_\perp)$", fontsize=8)
-      axes[1].set_title(rf"$yz \; (t = {t[i]:.1f} t_\perp)$", fontsize=8)
+      # axes[1].set_title(rf"$yz \; (t = {t[i]:.1f} t_\perp)$", fontsize=8)
       axes[0].set_xlabel(r"$x$")
       axes[0].set_ylabel(r"$z$")
-      axes[1].set_xlabel(r"$y$")
-      axes[1].set_ylabel(r"$z$")
+      # axes[1].set_xlabel(r"$y$")
+      # axes[1].set_ylabel(r"$z$")
       
-      # plt.colorbar(im1, ax=axes[0])
       if i==0:
-        plt.colorbar(im2, ax=axes[1])
+        plt.colorbar(im1, ax=axes[0])
+      #   plt.colorbar(im1, ax=axes[1])
 
       plt.tight_layout()
       
