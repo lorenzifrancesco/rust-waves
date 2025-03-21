@@ -19,16 +19,24 @@ plotting_evolution = True
 #
 harmonium          = False
 harmonium          = True
+
+fig3 = False
+
 default = Params.read("input/default.toml")
 d = default.dimension
 params = data_widths["a_s"].to_numpy()
 n = len(params)
-interleaved_points_n = 3
+interleaved_points_n = 5
 x_new = np.linspace(0, n - 1, interleaved_points_n * n - 1)
 params = np.interp(x_new, np.arange(n), params)
 # params = [params[38]]
-# params = params[39:]
-
+# params = [2.0]
+if fig3:
+  params = [-5.6]
+  exp_data = "fig3"
+else:
+  exp_data = "experiment"
+  
 cases = ["", "_low", "_high"]
 cases = [""]
 print("_____ computing the widths ______")
@@ -40,7 +48,7 @@ for case in cases:
 
   print("a_s list: ", params)
   print("_____ computing the GS ______")
-  write_from_experiment("input/experiment_pre_quench"+case+".toml",
+  write_from_experiment("input/"+exp_data+"_pre_quench"+case+".toml",
                       "input/params.toml",
                       "pre-quench"+case,
                       a_s = 20.0,
@@ -72,7 +80,7 @@ for case in cases:
   for i, a_s in enumerate(params):
     # a_s = a_s/2
     i += start_from
-    write_from_experiment("input/experiment"+case+".toml", 
+    write_from_experiment("input/"+exp_data+case+".toml", 
                           "input/params.toml", 
                           f"idx-{i}"+case, 
                           a_s=a_s,
@@ -87,7 +95,7 @@ for case in cases:
     if plotting_evolution:
       if d == 1: 
         plot_heatmap_h5(f"results/dyn_idx-{i}"+case+f"_{d}d.h5", i)
-        # plot_snap(f"results/idx-{i}_{d}d"+case+".h5", i)
+        plot_snap(f"results/idx-{i}_{d}d"+case+".h5", i)
       elif d == 3:
         # plot_projections([f"idx-{i}"+case+f"_{d}d"], i)
         plot_heatmap_h5_3d(f"dyn_idx-{i}"+case+f"_{d}d"+case, i)
@@ -97,11 +105,11 @@ for case in cases:
       
     if start_from == 0:
       remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}",
-          dimensions=d, 
+          dimensions=d,
           harmonium=harmonium)
       print("Width: ", result_widths[i])
 
-  if start_from == 0:
+  if start_from == 0 and not fig3:
     print("Saving the width csv file...")
     df = pd.DataFrame({
         "a_s": params,
@@ -114,10 +122,10 @@ for case in cases:
       df.to_csv(f"results/widths/widths_final_npse"+case+".csv", index=False)
     else:
       df.to_csv(f"results/widths/widths_final_{d}d"+case+".csv", index=False)
-
-  print("Plotting...")
-  plot_widths(noise=0.0, 
-              plot=True,
-              initial_number=3000,
-              case = case)
+  if not fig3:
+    print("Plotting...")
+    plot_widths(noise=0.0, 
+                plot=True,
+                initial_number=3000,
+                case = case)
   print("Done!")
