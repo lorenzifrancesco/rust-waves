@@ -223,6 +223,9 @@ pub fn propagate_3d(
         assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
 
         if idt % save_interval == 0 {
+            if cnt >= params.options.n_saves {
+              break;
+            }
             debug!("saving step {}", cnt);
             saved_psi.movie[cnt] = Projections3D::new(psi0);
             cnt += 1;
