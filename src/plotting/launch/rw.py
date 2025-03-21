@@ -105,7 +105,6 @@ def write_from_experiment(
     t_perp = ex["omega_perp"]**(-1) * 2 * pi # FIXME CHECK  
     t_perp = ex["omega_perp"]**(-1) # FIXME CHECK  
     
-    print("WARN: using the right Er")
     e_recoil = (pi * hbar / ex["d"])**2 / (2 * ex["m"])
     print(l_perp)
     # normalized
@@ -121,7 +120,6 @@ def write_from_experiment(
       g = 2 * a0 * a_s * (ex["n_atoms"]-1) / l_perp
       
     # raise("fix the following")
-    print("WARN: g to check here")
     g5 = ex["l_3"] / l_perp**6 * t_perp * ex["n_atoms"]**2 / 2
     if v_0 == None:
       v_0 = ex["v_0"] * e_recoil / e_perp

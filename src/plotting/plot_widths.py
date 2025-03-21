@@ -16,7 +16,8 @@ from scipy.optimize import minimize
 """
 Data processing from final snapshots to get the width and particle fraction  
 """
-def width_from_wavefunction(title, dimensions=1):
+def width_from_wavefunction(title, 
+                            dimensions=1, harmonium=False):
     filename = "".join(["results/", title, "_", str(dimensions), "d.h5"])
     print("Computing wavefunction for ", filename)
     params = Params.read("input/params.toml")
@@ -33,7 +34,21 @@ def width_from_wavefunction(title, dimensions=1):
         particle_fraction = np.sum(final_psi2[mask]) * dz
         print(f"particle fraction = {particle_fraction}")
         center = dz * np.sum(l[mask] * final_psi2[mask]) / particle_fraction
-        std = np.sqrt(dz * 
+        
+        if harmonium:
+          min_idx = params.dl * -4
+          max_idx = -min_idx
+          std = 0.0
+          for site in range(-4, 5):
+            lower_end = (site - 0.5) * params.dl
+            upper_end = (site + 0.5) * params.dl
+            mask = (l >= lower_end) & (l <= upper_end)
+            n_i = np.sum(dz * final_psi2[mask]) / particle_fraction
+            std += site**2 * n_i
+            print(f"Site = {site:3d}, [{lower_end:3.2f}, {upper_end:3.2f} ] n_site ={n_i:3.2f} ")
+          std = np.sqrt(std) - center**2
+        else:
+          std = np.sqrt(dz * 
                       np.sum(
                         l[mask]**2 * final_psi2[mask]
                         )/particle_fraction - center**2)
@@ -55,6 +70,7 @@ def width_from_wavefunction(title, dimensions=1):
         particle_fraction = np.sum(psi_squared[mask, :, :]) * dV
         print(f"particle fraction = {particle_fraction}")
         center = np.sum(l_x[mask, None, None] * psi_squared[mask, :, :]) * dV / particle_fraction
+        
         std = np.sqrt(dV * 
                   np.sum(
                     l_x[mask, None, None]**2 * psi_squared[mask, :, :]

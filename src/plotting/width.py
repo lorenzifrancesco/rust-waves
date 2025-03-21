@@ -12,19 +12,23 @@ from p3d_snap_projections import *
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
 recompute          = False
+recompute          = True
+#
 plotting_evolution = False
-# dimension
+plotting_evolution = True
+#
+harmonium          = False
+harmonium          = True
 default = Params.read("input/default.toml")
 d = default.dimension
 params = data_widths["a_s"].to_numpy()
-# params = [params[0]]
 n = len(params)
-interleaved_points_n = 5
+interleaved_points_n = 3
 x_new = np.linspace(0, n - 1, interleaved_points_n * n - 1)
 params = np.interp(x_new, np.arange(n), params)
+# params = [params[38]]
 # params = params[39:]
 
-# exit()
 cases = ["", "_low", "_high"]
 cases = [""]
 print("_____ computing the widths ______")
@@ -50,14 +54,20 @@ for case in cases:
     l.run()
   if plotting_evolution:
     if d == 1:
-      plot_heatmap_h5(f"results/dyn_pre-quench"+case+f"_{d}d.h5")
-      # plot_snap(f"results/pre-quench_{d}d"+case+".h5")
+      # plot_heatmap_h5(f"results/dyn_pre-quench"+case+f"_{d}d.h5")
+      plot_snap(f"results/pre-quench_{d}d"+case+".h5")
     elif d == 3:
       # plot_projections([f"pre-quench"+case+f"_{d}d"+case])
       # plot_heatmap_h5_3d(f"dyn_pre-quench"+case+f"_{d}d"+case, -1)
       movie(f"dyn_pre-quench_{d}d"+case)
       # plot_snap(f"results/pre-quench_{d}d.h5")
+  pf0, w0 = width_from_wavefunction(f"pre-quench",
+          dimensions=d, 
+          harmonium=harmonium)
+  print(f"pre-quench: fraction = {pf0:3.2f}, width = {w0:3.2f}")
   
+  # exit()
+  ## Iterate over the scattering lengths
   start_from = 0
   for i, a_s in enumerate(params):
     # a_s = a_s/2
@@ -86,8 +96,9 @@ for case in cases:
         # plot_snap(f"results/idx-{i}_{d}d.h5", i)
       
     if start_from == 0:
-      remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}", 
-                                                                                 dimensions=d)
+      remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}",
+          dimensions=d, 
+          harmonium=harmonium)
       print("Width: ", result_widths[i])
 
   if start_from == 0:
