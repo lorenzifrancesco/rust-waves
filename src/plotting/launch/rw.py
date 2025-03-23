@@ -94,7 +94,8 @@ def write_from_experiment(
   v_0 = None, 
   kl = None,
   free_x = False, 
-  t_imaginary = 8.0):
+  t_imaginary = 8.0,
+  n_atoms = None):
     ex = toml.load(input_filename)
     
     # scales (SI)
@@ -114,11 +115,15 @@ def write_from_experiment(
     
     if a_s == None:
       a_s = ex["a_s"]
+      
+    if n_atoms == None:
+      n_atoms = ex["n_atoms"]
+    
     if g == None:
-      g = 2 * a0 * a_s * (ex["n_atoms"]-1) / l_perp
+      g = 2 * a0 * a_s * (n_atoms-1) / l_perp
       
     # raise("fix the following")
-    g5 = ex["l_3"] / l_perp**6 * t_perp * ex["n_atoms"]**2 / 2
+    g5 = ex["l_3"] / l_perp**6 * t_perp * n_atoms**2 / 2
     if v_0 == None:
       v_0 = ex["v_0"] * e_recoil / e_perp
     p = Params.read("input/default.toml")

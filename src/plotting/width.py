@@ -8,10 +8,11 @@ import os
 import pandas
 from p1d_dyn_heatmap import *
 from p3d_snap_projections import *
+import time
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
-recompute          = False
+recompute          = True
 plotting_evolution = False
 harmonium          = True
 
@@ -32,23 +33,30 @@ if fig3:
 else:
   exp_data = "experiment"
   
-cases = ["", "_low", "_high"]
-cases = [""]
+cases = np.linspace(1200, 2200, 10, dtype=int)
+# cases = [None]
+
 print("_____ computing the widths ______")
-for case in cases:
+for cs in cases:
+  # time.sleep(2)
+  if cs == None:
+    case = ""
+  else: 
+    case = "_"+str(cs)
   # Initialize result arrays
   result_widths = np.zeros(len(params))
   result_widths_rough = np.zeros(len(params))
   remaining_particle_fraction = np.zeros(len(params))
 
-  print("a_s list: ", params)
+  # print("a_s list: ", params)
   print("_____ computing the GS ______")
-  write_from_experiment("input/"+exp_data+"_pre_quench"+case+".toml",
+  write_from_experiment("input/"+exp_data+"_pre_quench.toml",
                       "input/params.toml",
                       "pre-quench"+case,
                       a_s = 20.0,
                       load_gs = False, 
-                      t_imaginary=20.0)
+                      t_imaginary=20.0, 
+                      n_atoms = cs)
   l = Simulation(input_params="input/params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves")
@@ -76,20 +84,21 @@ for case in cases:
   for i, a_s in enumerate(params):
     # a_s = a_s/2
     i += start_from
-    write_from_experiment("input/"+exp_data+case+".toml", 
+    write_from_experiment("input/"+exp_data+".toml", 
                           "input/params.toml", 
                           f"idx-{i}"+case, 
                           a_s=a_s,
-                          load_gs=True)
+                          load_gs=True,
+                          n_atoms=cs)
     l = Simulation(input_params="input/params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves",)
     # exit() # save the zero simulation
     if not os.path.exists(f"results/idx-{i}"+case+f"_{d}d.h5") or recompute:
-      print("Computing wavefunction for ", f"results/idx-{i}"+case+f"_{d}d.h5")
+      # print("Computing wavefunction for ", f"results/idx-{i}"+case+f"_{d}d.h5")
       l.run()
     if plotting_evolution:
-      if d == 1: 
+      if d == 1:
         plot_heatmap_h5(f"results/dyn_idx-{i}"+case+f"_{d}d.h5", i)
         plot_snap(f"results/idx-{i}_{d}d"+case+".h5", i)
       elif d == 3:
@@ -99,11 +108,11 @@ for case in cases:
         # movie(f"dyn_idx-{i}_{d}d"+case, i)
       
     if start_from == 0:
-      remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}",
+      remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}"+case,
           dimensions=d,
           harmonium=harmonium)
-      # print("Width: ", result_widths[i])
-
+      # print("Width: ", result_widths[i])  
+  
   if start_from == 0 and not fig3:
     print("Saving the width csv file...")
     df = pd.DataFrame({

@@ -17,8 +17,10 @@ from scipy.interpolate import interp1d
 Data processing from final snapshots to get the width and particle fraction  
 """
 def width_from_wavefunction(title, 
-                            dimensions=1, harmonium=False):
-    filename = "".join(["results/", title, "_", str(dimensions), "d.h5"])
+                            dimensions=1, 
+                            harmonium=False, 
+                            case=""):
+    filename = "".join(["results/", title,"_", str(dimensions), "d.h5"])
     # print("Computing wavefunction for ", filename)
     params = Params.read("input/params.toml")
     # we sum only on [-4, +4] lattice sites.
@@ -32,7 +34,7 @@ def width_from_wavefunction(title,
         # print(mask)
         dz = l[1] - l[0]
         particle_fraction = np.sum(final_psi2[mask]) * dz
-        print(f"particle fraction = {particle_fraction}")
+        # print(f"particle fraction = {particle_fraction}")
         center = dz * np.sum(l[mask] * final_psi2[mask]) / particle_fraction
         
         if harmonium:
@@ -54,7 +56,7 @@ def width_from_wavefunction(title,
                         )/particle_fraction - center**2)
         # now we overwrite with the total particle fraction
         particle_fraction = np.sum(final_psi2) * dz
-        print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
+        # print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
     else:
         with h5py.File(filename, "r") as f:
             l_x = np.array(f["l_x"])
@@ -68,7 +70,7 @@ def width_from_wavefunction(title,
         dz = l_z[1] - l_z[0]
         dV = dx * dy * dz
         particle_fraction = np.sum(psi_squared[mask, :, :]) * dV
-        print(f"particle fraction = {particle_fraction}")
+        # print(f"particle fraction = {particle_fraction}")
         center = np.sum(l_x[mask, None, None] * psi_squared[mask, :, :]) * dV / particle_fraction
         
         if harmonium:
@@ -90,7 +92,7 @@ def width_from_wavefunction(title,
                     ) / particle_fraction - center**2)
         # now we overwrite with the total particle fraction
         particle_fraction = np.sum(psi_squared)* dV
-        print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
+        # print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
 
     if np.isnan(particle_fraction):
         particle_fraction = 0
@@ -116,6 +118,124 @@ def optimize_widths(noise, file):
     mse = np.sum((data["width"]-widths_noise)**2)/len(data_1)
     return mse
 
+
+def plot_widths_cumulative(noise=0.0,
+                           cases=[None]):
+    data = pd.read_csv("input/widths.csv", names=["a_s", "width", "number"])
+    data_list = []
+    labels = []
+    plt.figure(figsize=(3.6, 3))
+    # Extract columns
+    a_s = data["a_s"]  # First column as x-axis
+    width = data["width"]  # Second column as y-axis
+    # number = data["number"]
+    # Create the plot
+    plt.plot(a_s, width, marker='+', linestyle='-', lw=0.5,
+            color='b', label='experiment')
+    for cs in cases:
+      print("Case: ", cs)
+      case = "_"+str(cs)
+      try:
+          data_1 = pd.read_csv("results/widths/widths_final_1d"+case+".csv", header=0, names=[
+                              "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
+          data_list.append(data_1)
+          labels.append("1D"+case)
+      except:
+          print("No 1D data")
+      try:
+          data_npse = pd.read_csv("results/widths/widths_final_npse"+case+".csv", header=0, names=[
+                                  "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
+          data_list.append(data_npse)
+          labels.append("NPSE"+case)
+      except:
+          print("No NPSE data")
+      try:
+          data_3 = pd.read_csv("results/widths/widths_final_3d"+case+".csv", header=0, names=[
+                              "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
+          data_list.append(data_3)
+          labels.append("3D"+case)
+      except:
+          print("No 3D data")
+
+    linestyle = ['-.', ':', '-', ':'] * len(cases)
+    cf = toml.load("input/experiment.toml")
+    n_atoms = cf["n_atoms"]
+    # if noises is not None:
+        # noise = 0.0
+    # print(f"applying the noise of ", noise)
+    noise_atoms = n_atoms * noise
+    l = 8  # lattice sites
+    # print(data_list)
+    for i, data in enumerate(data_list):
+        width = np.array(data["width_sim"])
+        a_s = data["a_s"]
+        # if noises is not None:
+        #     noise_atoms = n_atoms * noises[i]
+        print(f"num {i}, width last {width[-1]}")
+        width = apply_noise_to_widths(width, l, noise_atoms, n_atoms)
+        # print("before: \n ", width)
+        # print("after: \n ", width)
+        sketchy = 1
+        if i == 2:
+          sketchy = 1
+        plt.scatter(a_s*sketchy, width, s=2, marker='x')
+        possible = ~np.isnan(width)
+        a_s_filtered = a_s[possible]
+        a_s_resampled = np.linspace(a_s_filtered.min(), a_s_filtered.max(), 100)
+        width = interp1d(a_s[possible], width[possible], kind='cubic')(a_s_resampled)
+        plt.plot(a_s_resampled*sketchy, width,
+                  label=labels[i],
+                  linestyle=linestyle[i],
+                  lw=0.7)
+          
+    plt.xlabel(r"$a_s/a_0$")
+    plt.ylabel(r"$w_z$ [sites] ")
+    plt.xlim([-21, 1.0])
+    plt.tight_layout()
+    plt.legend(fontsize=8, labelspacing=0.2)
+    plt.savefig("media//widths/widths_cumulative.pdf", dpi=300)
+    print("Saved media//widths/widths_cumulative.pdf")
+        
+    # ## Plotting the particle fraction
+    # plt.clf()
+    # plt.figure(figsize=(3.6, 3))
+    # data = pd.read_csv("input/widths.csv", names=["a_s", "width", "number"])
+    # a_s = data["a_s"]  # First column as x-axis
+    # width = data["width"]  # Second column as y-axis
+    # # plt.plot(a_s, number/initial_number, 
+    # #          marker='+', 
+    # #          linestyle='-', 
+    # #          lw = 0.5,
+    # #          color='b', 
+    # #          label='experiment')
+    # for i, data in enumerate(data_list):
+    #     fraction = data["particle_fraction"]  # Second column as y-axis
+    #     a_s = data["a_s"] 
+    #     sketchy = 1
+    #     if i == 2:
+    #       sketchy = 1
+          
+    #     plt.scatter(a_s*sketchy, fraction, s=2, marker='x')
+    #     possible = ~np.isclose(fraction, 0.0)
+    #     a_s_filtered = a_s[possible]
+    #     a_s_resampled = np.linspace(a_s_filtered.min(), a_s_filtered.max(), 100)
+    #     fraction = interp1d(a_s[possible], fraction[possible], kind='cubic')(a_s_resampled)
+    #     plt.plot(a_s_resampled*sketchy, fraction,
+    #               label=labels[i],
+    #               linestyle=linestyle[i], 
+    #               lw=0.7)
+    #     # plt.scatter(a_s*sketchy, fraction, s=2, marker='x')
+    #     # plt.plot(a_s * sketchy, fraction,
+    #     #          linestyle=linestyle[i],
+    #     #          label=labels[i], 
+    #     #          lw=0.7)
+    # plt.xlabel(r"$a_s/a_0$")
+    # plt.ylabel(r"$N_{\mathrm{tot}}/N_0$")
+    # plt.xlim([-21, 1.0])
+    # plt.tight_layout()
+    # plt.legend(fontsize=8, labelspacing=0.2)
+    # plt.savefig("media/fraction/fraction"+case+".pdf", dpi=300)
+    # print("Saved media/fraction/fraction"+case+".pdf")
 
 """
 Plotting loading the CSV files with the widths and the particle fraction
@@ -170,7 +290,7 @@ def plot_widths(noise=0.0,
     n_atoms = cf["n_atoms"]
     if noises is not None:
         noise = 0.0
-    print(f"applying the noise of ", noise)
+    # print(f"applying the noise of ", noise)
     noise_atoms = n_atoms * noise
     l = 8  # lattice sites
     for i, data in enumerate(data_list):
@@ -204,11 +324,11 @@ def plot_widths(noise=0.0,
     plt.tight_layout()
     plt.legend(fontsize=8, labelspacing=0.2)
     if noises is not None:
-        plt.savefig("media/widths_optim"+case+".pdf", dpi=300)
-        print("Saved media/widths_optim"+case+".pdf")
+        plt.savefig("media/widths/widths_optim"+case+".pdf", dpi=300)
+        print("Saved media/widths/widths_optim"+case+".pdf")
     else:
-        plt.savefig("media/widths"+case+".pdf", dpi=300)
-        print("Saved media/widths"+case+".pdf")
+        plt.savefig("media//widths/widths"+case+".pdf", dpi=300)
+        print("Saved media//widths/widths"+case+".pdf")
         
     ## Plotting the particle fraction
     plt.clf()
@@ -248,15 +368,18 @@ def plot_widths(noise=0.0,
     plt.xlim([-21, 1.0])
     plt.tight_layout()
     plt.legend(fontsize=8, labelspacing=0.2)
-    plt.savefig("media/fraction"+case+".pdf", dpi=300)
-    print("Saved media/fraction"+case+".pdf")
+    plt.savefig("media/fraction/fraction"+case+".pdf", dpi=300)
+    print("Saved media/fraction/fraction"+case+".pdf")
 
 
 if __name__ == "__main__":
     # print(width_from_wavefunction("idx-9", dimensions=1))
     # print(width_from_wavefunction("idx-9", dimensions=3))
     
-    # exit()
+    cases = np.linspace(1200, 2200, 10, dtype=int)
+    plot_widths_cumulative(cases = cases)
+    
+    exit()
     plot_widths(0.0, 
                 plot=True, 
                 initial_number=3000)
