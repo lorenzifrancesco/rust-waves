@@ -25,7 +25,7 @@ def collapse_or_not(g, v0):
                       load_gs = False, 
                       v_0 = v0, 
                       free_x=True, 
-                      t_imaginary = 100.0)
+                      t_imaginary = 8.0)
   l = Simulation(input_params="input/params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves")
@@ -50,7 +50,7 @@ t_perp = ex["omega_perp"]**(-1) * 2 * np.pi
 e_recoil = (np.pi * hbar / ex["d"])**2 / (2 * ex["m"])
 a0_l_perp = a0 / l_perp 
 
-recompute          = False
+recompute          = True
 plotting_evolution = False
 # dimension
 default = Params.read("input/default.toml")
@@ -72,16 +72,20 @@ if default.npse == True and default.dimension == 1:
 else:
   name = f"results/ol_stability_{d}d.csv"
  
-if os.path.exists(name) and recompute:
+if ~os.path.exists(name) or recompute:
   # exit()
   # cases = ["", "_low", "_high"]
   gcs = np.zeros(len(v0s))
   print("_____ searching for collapse points ______")
   for iv, v0 in enumerate(v0s):
-    gcs[iv] = bisect(collapse_or_not, 0.0, -1.5, 
+    try:
+      gcs[iv] = bisect(collapse_or_not, 0.0, -1.5, 
                     args=(v0),
                     maxiter=100, 
-                    xtol=1e-3)
+                    xtol=1e-2)
+    except ValueError as e:
+      print(f">>> Error: {e}")
+      gcs[iv] = np.nan
 
   print("Saving the csv file...")
   df = pd.DataFrame({
@@ -102,6 +106,7 @@ f_var = interp1d(x_var, y_var, kind='cubic')
 x_new_var = np.linspace(x_var[0], x_var[-1], 100)
 y_new_var = f_var(x_new_var)
 
+df_loaded = pd.read_csv(name)
 df_loaded = pd.read_csv(f"results/ol_stability_npse.csv")
 v0s = df_loaded["v0"].to_numpy()
 gcs = df_loaded["g_c"].to_numpy()
@@ -153,4 +158,3 @@ plt.grid(which='minor', linestyle=':', linewidth=0.3, alpha=0.5)
 plt.tight_layout()
 plt.savefig(f"media/ol_stability_as.png", dpi=400)
 print("Saved plot in media/ol_stability_as.png")
-print("Done!")

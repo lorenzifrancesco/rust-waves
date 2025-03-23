@@ -24,7 +24,6 @@ def after_run(l):
     # fig, ax = plot_axial_density.init_plotting()
     # plot_axial_density.plot_3d_axial_density(fig, ax, name_list=["test_3d"], color="blue", ls="-")
     # plt.savefig("media/test.pdf", dpi=900)
-  print("Done.")
             
       
                   

@@ -97,16 +97,14 @@ def write_from_experiment(
   t_imaginary = 8.0):
     ex = toml.load(input_filename)
     
-    # scales
+    # scales (SI)
     a0 = physical_constants["Bohr radius"][0]
-    print(a0)
     l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
     e_perp = hbar * ex["omega_perp"]
-    t_perp = ex["omega_perp"]**(-1) * 2 * pi # FIXME CHECK  
-    t_perp = ex["omega_perp"]**(-1) # FIXME CHECK  
+    # t_perp = ex["omega_perp"]**(-1) * 2 * pi
+    t_perp = ex["omega_perp"]**(-1)
     
     e_recoil = (pi * hbar / ex["d"])**2 / (2 * ex["m"])
-    print(l_perp)
     # normalized
     
     if ex["omega_x"] != 0 and (not free_x):
@@ -134,14 +132,13 @@ def write_from_experiment(
       p.im_t = False
       p.w = -1.0
       p.g5 = float(g5) 
-      t = ex["t_f"]/t_perp
+      t = ex["t_f"] / t_perp
       p.t =float(t)
     else: 
       p.im_t = True
       p.t = t_imaginary
       p.g5 = 0.0 
-      p.w = 1.2 # with this number the NPSE has a good initial state for all the theoretically noncollapsing evolution. 
-
+      p.w = 0.6 # with this number the NPSE has a good initial state for all the theoretically noncollapsing evolution. 
     p.write(output_filename)
     return
 

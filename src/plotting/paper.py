@@ -97,4 +97,3 @@ plot_widths(noise=0.0,
             plot=True,
             initial_number=2800)
 
-print("Done!")

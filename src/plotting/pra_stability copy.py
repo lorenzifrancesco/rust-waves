@@ -88,4 +88,3 @@ plt.tight_layout()
 plt.savefig(f"media/ol_stability.png")
 
 print("Saved plot in media/ol_stability.png")
-print("Done!")

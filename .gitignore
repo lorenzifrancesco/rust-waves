@@ -1,8 +1,8 @@
 /target
-
-media
-results
-input*
+/dumpster
+/media
+/results
+/input*
 *.csv
 perf*
 __pycache__

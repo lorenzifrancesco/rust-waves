@@ -39,7 +39,6 @@ class Simulation:
                             capture_output=True, text=True)
     if result.returncode != 0:
       print("!! problems in the compilation")
-    print("Done.")
 
   def run(self):
     print("Running...")
@@ -49,7 +48,6 @@ class Simulation:
             stdout=subprocess.PIPE, 
             capture_output=False, 
             check=True)
-    print("Done.")
     return
  
 if __name__ == "__main__":
@@ -58,4 +56,3 @@ if __name__ == "__main__":
                  rust="./target/debug/rust_waves")
   l.compile("debug")
   l.run()
-  print("Done.")

@@ -11,7 +11,7 @@ import re
 import h5py
 from launch.rw import Params
 from scipy.optimize import minimize
-
+from scipy.interpolate import interp1d
 
 """
 Data processing from final snapshots to get the width and particle fraction  
@@ -19,7 +19,7 @@ Data processing from final snapshots to get the width and particle fraction
 def width_from_wavefunction(title, 
                             dimensions=1, harmonium=False):
     filename = "".join(["results/", title, "_", str(dimensions), "d.h5"])
-    print("Computing wavefunction for ", filename)
+    # print("Computing wavefunction for ", filename)
     params = Params.read("input/params.toml")
     # we sum only on [-4, +4] lattice sites.
     min_idx = params.dl * -4
@@ -45,7 +45,7 @@ def width_from_wavefunction(title,
             mask = (l >= lower_end) & (l <= upper_end)
             n_i = np.sum(dz * final_psi2[mask]) / particle_fraction
             std += site**2 * n_i
-            print(f"Site = {site:3d}, [{lower_end:3.2f}, {upper_end:3.2f} ] n_site ={n_i:3.2f} ")
+            # print(f"Site = {site:3d}, [{lower_end:3.2f}, {upper_end:3.2f} ] n_site ={n_i:3.2f} ")
           std = np.sqrt(std) - center**2
         else:
           std = np.sqrt(dz * 
@@ -71,7 +71,20 @@ def width_from_wavefunction(title,
         print(f"particle fraction = {particle_fraction}")
         center = np.sum(l_x[mask, None, None] * psi_squared[mask, :, :]) * dV / particle_fraction
         
-        std = np.sqrt(dV * 
+        if harmonium:
+          min_idx = params.dl * -4
+          max_idx = -min_idx
+          std = 0.0
+          for site in range(-4, 5):
+            lower_end = (site - 0.5) * params.dl
+            upper_end = (site + 0.5) * params.dl
+            mask = (l_x >= lower_end) & (l_x <= upper_end)
+            n_i = np.sum(dV * psi_squared[mask, :, :]) / particle_fraction
+            std += site**2 * n_i
+            # print(f"Site = {site:3d}, [{lower_end:3.2f}, {upper_end:3.2f} ] n_site ={n_i:3.2f} ")
+          std = np.sqrt(std) - center**2
+        else:
+          std = np.sqrt(dV *
                   np.sum(
                     l_x[mask, None, None]**2 * psi_squared[mask, :, :]
                     ) / particle_fraction - center**2)
@@ -81,7 +94,7 @@ def width_from_wavefunction(title,
 
     if np.isnan(particle_fraction):
         particle_fraction = 0
-    return particle_fraction, std
+    return particle_fraction, std/params.dl
 
 
 def apply_noise_to_widths(w, l, noise_atoms, n_atoms):
@@ -173,7 +186,12 @@ def plot_widths(noise=0.0,
         if i == 2:
           sketchy = 1
         if plot:
-            plt.plot(a_s*sketchy, width,
+            plt.scatter(a_s*sketchy, width, s=2, marker='x')
+            possible = ~np.isnan(width)
+            a_s_filtered = a_s[possible]
+            a_s_resampled = np.linspace(a_s_filtered.min(), a_s_filtered.max(), 100)
+            width = interp1d(a_s[possible], width[possible], kind='cubic')(a_s_resampled)
+            plt.plot(a_s_resampled*sketchy, width,
                      label=labels[i],
                      linestyle=linestyle[i], 
                      lw=0.7)
@@ -210,10 +228,21 @@ def plot_widths(noise=0.0,
         sketchy = 1
         if i == 2:
           sketchy = 1
-        plt.plot(a_s * sketchy, fraction,
-                 linestyle=linestyle[i],
-                 label=labels[i], 
-                 lw=0.7)
+          
+        plt.scatter(a_s*sketchy, fraction, s=2, marker='x')
+        possible = ~np.isclose(fraction, 0.0)
+        a_s_filtered = a_s[possible]
+        a_s_resampled = np.linspace(a_s_filtered.min(), a_s_filtered.max(), 100)
+        fraction = interp1d(a_s[possible], fraction[possible], kind='cubic')(a_s_resampled)
+        plt.plot(a_s_resampled*sketchy, fraction,
+                  label=labels[i],
+                  linestyle=linestyle[i], 
+                  lw=0.7)
+        # plt.scatter(a_s*sketchy, fraction, s=2, marker='x')
+        # plt.plot(a_s * sketchy, fraction,
+        #          linestyle=linestyle[i],
+        #          label=labels[i], 
+        #          lw=0.7)
     plt.xlabel(r"$a_s/a_0$")
     plt.ylabel(r"$N_{\mathrm{tot}}/N_0$")
     plt.xlim([-21, 1.0])
@@ -231,28 +260,28 @@ if __name__ == "__main__":
     plot_widths(0.0, 
                 plot=True, 
                 initial_number=3000)
-    # file_list = ["results/widths_final_1d.csv",
-    #              "results/widths_final_npse.csv",
-    #              "results/widths_final_3d.csv"]
-    # noises = []
-    # for f in file_list:
-    #     print("evaluating -> ", f)
-    #     def foo(x): return optimize_widths(x, f)
-    #     res = minimize(foo,
-    #                    0.35,
-    #                    method='nelder-mead',
-    #                    options={'xatol': 1e-8, 'disp': True})
-    #     print("Opt. Noise: ", res.x)
-    #     print("MSE       : ", res.fun)
-    #     noises.append(res.x)
-    #     data_1 = pd.read_csv(f, header=0, names=[
-    #         "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
-    #     cf = toml.load("input/experiment.toml")
-    #     noise_atoms = cf["n_atoms"] * res.x
-    #     ww = apply_noise_to_widths(
-    #         data_1["width_sim"], 8, noise_atoms, cf["n_atoms"])
-    #     print(f"Values    : ", ww)
-    # plot_widths(0.0,
-    #             plot=True,
-    #             initial_number = 1700,
-    #             noises=noises)
+    file_list = ["results/widths/widths_final_1d.csv",
+                 "results/widths/widths_final_npse.csv",
+                 "results/widths/widths_final_3d.csv"]
+    noises = []
+    for f in file_list:
+        print("evaluating -> ", f)
+        def foo(x): return optimize_widths(x, f)
+        res = minimize(foo,
+                       0.35,
+                       method='nelder-mead',
+                       options={'xatol': 1e-8, 'disp': True})
+        print("Opt. Noise: ", res.x)
+        print("MSE       : ", res.fun)
+        noises.append(res.x)
+        data_1 = pd.read_csv(f, header=0, names=[
+            "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
+        cf = toml.load("input/experiment.toml")
+        noise_atoms = cf["n_atoms"] * res.x
+        ww = apply_noise_to_widths(
+            data_1["width_sim"], 8, noise_atoms, cf["n_atoms"])
+        print(f"Values    : ", ww)
+    plot_widths(0.0,
+                plot=True,
+                initial_number = 1700,
+                noises=noises)

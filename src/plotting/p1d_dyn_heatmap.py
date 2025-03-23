@@ -34,12 +34,8 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1):
   
   l_perp = np.sqrt(hbar / (m * exp_par["omega_perp"]))
   print("l_perp ", l_perp)
-  x_min = l.min() * l_perp * 1e6
   x_max = l.max() * l_perp * 1e6
   x_min = -x_max
-  t_min = t.min()
-  t_max = t.max()
-  space_points = len(l)
   time_points = len(t)
   
   d = dl * l_perp
@@ -70,14 +66,16 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1):
 
   # ax_heatmap.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
   ax_heatmap.set_ylim(bottom=lim_bottom, top=lim_top)
+  ax_heatmap.set_xlim([0.0, t.max()])
   # if x_zoom is not None:
   #   ax_heatmap.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
   ax_heatmap.set_ylabel(r'$z \quad [\mu m]$')
   ax_heatmap.axhline(+d/2*1e6, color='w', linestyle='-', lw=0.3)
   ax_heatmap.axhline(-d/2*1e6, color='w', linestyle='-', lw=0.3)
   ax_heatmap.axvline(t.max() /(2 * np.pi))
-  # ax_heatmap.set_aspect(t_max / (2*x_max))
-  ax_heatmap.set_aspect(len(t) / (lim_top-lim_bottom))
+  ax_heatmap.axvline(t.max()+1.5)
+
+  ax_heatmap.set_aspect(t.max() / (lim_top-lim_bottom))
   # ax_heatmap.set_aspect(aspect)
   # Add colorbar to the right of the entire plot
   cbar_ax = fig.add_subplot(gs[:, 1])  # Colorbar spans both rows
@@ -89,11 +87,12 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1):
   atom_number = np.sum(psi_squared, axis=1) * (l[1] - l[0])
   # Line plot for atom number
   ax_lineplot = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
+  # ax2 = fig.add_axes(ax_heatmap.get_position(), sharex=ax_hea)
   ax_lineplot.plot(atom_number, color='blue')
   # ax_lineplot.set_xlabel(r'$t \quad [\mathrm{ms}]$')
   ax_lineplot.set_xlabel(r'$t \quad [\omega_\perp]$')
   ax_lineplot.set_ylabel(r'$N(t)/N_0$')
-  ax_lineplot.set_xticks([0, time_points - 1])  # Positions: start and end of time
+  ax_lineplot.set_xticks([0, t.max()])
   ax_lineplot.set_xticklabels([f"{0.0:.1f}", fr"{{{t.max():3.2f}}}"])  # Labels: min and max time
   ax_lineplot.axhline(2/3, color='b', linestyle='-.', lw=0.3)
   

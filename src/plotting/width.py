@@ -12,12 +12,7 @@ from p3d_snap_projections import *
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
 recompute          = False
-recompute          = True
-#
 plotting_evolution = False
-plotting_evolution = True
-#
-harmonium          = False
 harmonium          = True
 
 fig3 = False
@@ -26,7 +21,7 @@ default = Params.read("input/default.toml")
 d = default.dimension
 params = data_widths["a_s"].to_numpy()
 n = len(params)
-interleaved_points_n = 5
+interleaved_points_n = 1
 x_new = np.linspace(0, n - 1, interleaved_points_n * n - 1)
 params = np.interp(x_new, np.arange(n), params)
 # params = [params[38]]
@@ -52,7 +47,8 @@ for case in cases:
                       "input/params.toml",
                       "pre-quench"+case,
                       a_s = 20.0,
-                      load_gs = False)
+                      load_gs = False, 
+                      t_imaginary=20.0)
   l = Simulation(input_params="input/params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves")
@@ -62,13 +58,13 @@ for case in cases:
     l.run()
   if plotting_evolution:
     if d == 1:
-      # plot_heatmap_h5(f"results/dyn_pre-quench"+case+f"_{d}d.h5")
+      plot_heatmap_h5(f"results/dyn_pre-quench"+case+f"_{d}d.h5")
       plot_snap(f"results/pre-quench_{d}d"+case+".h5")
     elif d == 3:
       # plot_projections([f"pre-quench"+case+f"_{d}d"+case])
-      # plot_heatmap_h5_3d(f"dyn_pre-quench"+case+f"_{d}d"+case, -1)
-      movie(f"dyn_pre-quench_{d}d"+case)
-      # plot_snap(f"results/pre-quench_{d}d.h5")
+      plot_heatmap_h5_3d(f"dyn_pre-quench"+case+f"_{d}d"+case, -1)
+      # movie(f"dyn_pre-quench_{d}d"+case)
+
   pf0, w0 = width_from_wavefunction(f"pre-quench",
           dimensions=d, 
           harmonium=harmonium)
@@ -99,15 +95,14 @@ for case in cases:
       elif d == 3:
         # plot_projections([f"idx-{i}"+case+f"_{d}d"], i)
         plot_heatmap_h5_3d(f"dyn_idx-{i}"+case+f"_{d}d"+case, i)
-        movie(f"dyn_idx-{i}"+case+f"_{d}d"+case, i)
+        # movie(f"dyn_idx-{i}"+case+f"_{d}d"+case, i)
         # movie(f"dyn_idx-{i}_{d}d"+case, i)
-        # plot_snap(f"results/idx-{i}_{d}d.h5", i)
       
     if start_from == 0:
       remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}",
           dimensions=d,
           harmonium=harmonium)
-      print("Width: ", result_widths[i])
+      # print("Width: ", result_widths[i])
 
   if start_from == 0 and not fig3:
     print("Saving the width csv file...")
@@ -128,4 +123,3 @@ for case in cases:
                 plot=True,
                 initial_number=3000,
                 case = case)
-  print("Done!")
