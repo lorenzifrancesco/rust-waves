@@ -5,6 +5,7 @@ use ndarray::Array2;
 use ndrustfft::Complex;
 use ndrustfft::{ndfft_par, ndifft_par, FftHandler};
 use rustfft;
+use core::f64;
 use std::f64::consts::PI;
 use std::time::Instant;
 use std::vec;
@@ -109,6 +110,7 @@ pub fn propagate_1d(
           }
           cnt += 1;
         }
+        saved_psi.psi[params.options.n_saves-1] = psi0.clone();
     }
     saved_psi
 }
@@ -155,6 +157,7 @@ pub fn propagate_3d(
     let size_x = psi0.l_x.len();
     let size_y = psi0.l_y.len();
     let size_z = psi0.l_z.len();
+    let dv: f64 = (psi0.l_x[1] - psi0.l_x[0]) * (psi0.l_y[1] - psi0.l_y[0]) * (psi0.l_z[1] - psi0.l_z[0]);
     let handler_x = FftHandler::new(size_x);
     let handler_y = FftHandler::new(size_y);
     let handler_z = FftHandler::new(size_z);
@@ -221,7 +224,12 @@ pub fn propagate_3d(
         }
         ns = normalization_factor_3d(psi0);
         assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
-
+        let max_single_cell_prob = dv *  psi0.field.iter().map(|x| x.norm_sqr()).fold(0.0, f64::max);
+        warn!("Max single cell prob = {}", max_single_cell_prob);
+        if max_single_cell_prob > 0.05 {
+            panic!("The wavefunction has exploded. Max norm = {}", max_single_cell_prob);
+        }
+        
         if idt % save_interval == 0 {
             if cnt >= params.options.n_saves {
               break;
