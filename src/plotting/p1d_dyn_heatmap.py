@@ -7,7 +7,7 @@ from matplotlib import cm
 import toml
 from matplotlib.colorbar import Colorbar
 import re
-
+import pandas as pd
 
 plt.rcParams.update({
     "text.usetex": True,  # Use LaTeX for text rendering
@@ -52,7 +52,7 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1):
       cmap="nipy_spectral",
       # cbar=False,  # Disable the default colorbar
       # ax=ax_heatmap, 
-      interpolation="bicubic",
+      interpolation="none",
       extent=extent,
   )
   x_zoom = 10
@@ -173,8 +173,6 @@ def plot_heatmap_h5_3d(name="1d", i=-1):
   x_min = l.min() * l_perp * 1e6
   x_max = l.max() * l_perp * 1e6
   x_min = -x_max
-  t_min = t.min()
-  t_max = t.max()
   space_points = len(l)
   time_points = len(t)
   
@@ -201,14 +199,20 @@ def plot_heatmap_h5_3d(name="1d", i=-1):
   gs = fig.add_gridspec(2, 2, width_ratios=[40, 1], height_ratios=[4, 1], wspace=0.15, hspace=0.2)
 
   # Heatmap plot
-  ax_heatmap = fig.add_subplot(gs[0, 0])
-
+  ax_heatmap = fig.add_subplot(gs[0, 0])  
+  # for exporting the data
+  psi2_values /= l_perp
+  psi2_values *= 1700
+  print(f"l_perp = {l_perp}, dl = {(l[1]-l[0])*l_perp}")
+  df = pd.DataFrame(psi2_values)
+  print(df)
+  df.to_csv("results/widths/"+str(i)+".csv", index=False, header=False)
   ax_heatmap.imshow(
       psi2_values,
       cmap="viridis",
       # cbar=False,  # Disable the default colorbar
       # ax=ax_heatmap, 
-      interpolation="bicubic",
+      interpolation="none",
   )
   x_zoom = 10
   lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
@@ -226,11 +230,14 @@ def plot_heatmap_h5_3d(name="1d", i=-1):
   norm = plt.Normalize(vmin=np.min(psi2_values), vmax=np.max(psi2_values))
   sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
   cbar = Colorbar(cbar_ax, sm, orientation='vertical')
-  cbar.set_label(r'$|f|^2$', rotation=90)
+  cbar.set_label(r'$n(x) \; [\mathrm{atom fraction} /\mathrm{m}^3]$', rotation=90)
 
   # Line plot for atom number
+  dz = (l[1]-l[0]) * l_perp
+  atom_number = np.sum(psi2_values, axis=0) * dz
+  print(atom_number)
   ax_lineplot = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
-  ax_lineplot.plot(atom_number, color='blue')
+  ax_lineplot.plot(atom_number, color='blue', lw=0.2)
   ax_lineplot.set_xlabel(r'$t \quad [\mathrm{ms}]$')
   ax_lineplot.set_ylabel(r'$N(t)/N_0$')
   ax_lineplot.set_xticks([0, time_points - 1])  # Positions: start and end of time

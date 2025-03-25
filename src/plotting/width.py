@@ -3,7 +3,7 @@ import numpy as np
 from launch.rust_launcher import Simulation
 from launch.rw import Params, write_from_experiment
 from scipy.constants import physical_constants
-from plot_widths import width_from_wavefunction, apply_noise_to_widths, plot_widths
+from plot_widths import width_from_wavefunction, apply_noise_to_widths, plot_widths, plot_widths_cumulative
 import os
 import pandas
 from p1d_dyn_heatmap import *
@@ -12,8 +12,8 @@ import time
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
-recompute          = True
-plotting_evolution = False
+recompute          = False
+plotting_evolution = True
 harmonium          = True
 
 fig3 = False
@@ -22,7 +22,7 @@ default = Params.read("input/default.toml")
 d = default.dimension
 params = data_widths["a_s"].to_numpy()
 n = len(params)
-interleaved_points_n = 1
+interleaved_points_n = 2
 x_new = np.linspace(0, n - 1, interleaved_points_n * n - 1)
 params = np.interp(x_new, np.arange(n), params)
 # params = [params[38]]
@@ -32,9 +32,11 @@ if fig3:
   exp_data = "fig3"
 else:
   exp_data = "experiment"
-  
-cases = np.linspace(1200, 2200, 10, dtype=int)
-# cases = [None]
+
+cases = np.linspace(1200, 2200, 5, dtype=int)
+# cases = [cases[0]]
+cases = [1700]
+params = [-9.474, -4.281]
 
 print("_____ computing the widths ______")
 for cs in cases:
@@ -52,7 +54,7 @@ for cs in cases:
   print("_____ computing the GS ______")
   write_from_experiment("input/"+exp_data+"_pre_quench.toml",
                       "input/params.toml",
-                      "pre-quench"+case,
+                      "pre-quench",
                       a_s = 20.0,
                       load_gs = False, 
                       t_imaginary=20.0, 
@@ -70,8 +72,8 @@ for cs in cases:
       plot_snap(f"results/pre-quench_{d}d"+case+".h5")
     elif d == 3:
       # plot_projections([f"pre-quench"+case+f"_{d}d"+case])
-      plot_heatmap_h5_3d(f"dyn_pre-quench"+case+f"_{d}d"+case, -1)
-      # movie(f"dyn_pre-quench_{d}d"+case)
+      plot_heatmap_h5_3d(f"dyn_pre-quench"+case+f"_{d}d", -1)
+      # movie(f"dyn_pre-quench"+case+f"_{d}d")
 
   pf0, w0 = width_from_wavefunction(f"pre-quench",
           dimensions=d, 
@@ -103,14 +105,15 @@ for cs in cases:
         plot_snap(f"results/idx-{i}_{d}d"+case+".h5", i)
       elif d == 3:
         # plot_projections([f"idx-{i}"+case+f"_{d}d"], i)
-        plot_heatmap_h5_3d(f"dyn_idx-{i}"+case+f"_{d}d"+case, i)
+        plot_heatmap_h5_3d(f"dyn_idx-{i}"+case+f"_{d}d", i)
         # movie(f"dyn_idx-{i}"+case+f"_{d}d"+case, i)
-        # movie(f"dyn_idx-{i}_{d}d"+case, i)
+        # movie(f"dyn_idx-{i}"+case+f"_{d}d", i)
       
     if start_from == 0:
       remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}"+case,
           dimensions=d,
-          harmonium=harmonium)
+          harmonium=harmonium,
+          particle_threshold=0.05)
       # print("Width: ", result_widths[i])  
   
   if start_from == 0 and not fig3:
@@ -132,3 +135,9 @@ for cs in cases:
                 plot=True,
                 initial_number=3000,
                 case = case)
+
+if not fig3:
+  cases = np.linspace(1200, 2200, 10, dtype=int)
+  cases= cases[:-2]
+  plot_widths_cumulative(cases = cases, 
+                         a_s_limit = -14)
