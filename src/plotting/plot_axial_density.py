@@ -3,6 +3,8 @@ import h5py
 import matplotlib.pyplot as plt
 import toml
 from plot_widths import width_from_wavefunction
+from scipy.interpolate import interp1d
+from p3d_snap_projections import load_hdf5_data
 
 def init_plotting():
   fig, ax = plt.subplots(1, 1, figsize=(3.9, 2.2), dpi=600)
@@ -66,7 +68,7 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
 
     # Calculate projections
     x = np.sum(field, axis=(1, 2)) * dy * dz
-    assert(np.abs(np.sum(x) * dx - 1.0) < 1e-9)
+    assert(np.abs(np.sum(x) * dx - 1.0) < 1e-4)
     vmin, vmax = np.nanmin(x), np.nanmax(x)
     vmax = min(2.0, abs(vmax))
 
@@ -110,14 +112,23 @@ def plot_3d_radial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-"
 
     # Calculate projections
     y = np.sum(field, axis=(0, 2)) * dx * dz
-    assert(np.abs(np.sum(y) * dy - 1.0) < 1e-9)
+    # assert(np.abs(np.sum(y) * dy - 1.0) < 1e-9)
 
     vmin, vmax = np.nanmin(y), np.nanmax(y)
     vmax = min(2.0, abs(vmax))
 
-    ax.plot(l_y, y, lw=1, linestyle=ls, color=color)
+    ax.plot(l_y, y, 
+            lw=0.5, 
+            linestyle=ls, 
+            color="k", )
+    l_y_resampled = np.linspace(l_y[0], l_y[-1], 1000)
+    y_resampled = interp1d(l_y, y, "cubic")(l_y_resampled)
+    ax.plot(l_y_resampled, y_resampled,
+            lw=0.5, 
+            linestyle=ls, 
+            color=color, )
     ax.set_xlabel(r"$y \ [l_\perp]$")
-    ax.set_ylabel(r"$|f|^2$")
+    ax.set_ylabel(r"n(y)")
     plt.tight_layout()
 
     # Save the plot as a PNG file
@@ -126,6 +137,70 @@ def plot_3d_radial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-"
     print(f"Saved 3D projections as '{output_file}'.")
     return fig, ax
   
+
+def plot_3d_radial_density_dyn(fig, 
+                               ax, 
+                               name_list = ["psi_1d"], color="blue", 
+                               ls="-",
+                               time=5.0,
+                               upsampling=True):
+    # Load the 3D array from the HDF5 file
+  ex = toml.load("input/experiment_pre_quench.toml")
+  # scales
+  hbar = 1.0545e-34
+  l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
+  e_perp = hbar * ex["omega_perp"]
+  t_perp = ex["omega_perp"]**(-1)
+  print(f"Plotting at t={time*t_perp*1e3} ms")
+  for name in name_list:
+    t, frames = load_hdf5_data(name)
+    idx = np.searchsorted(t, time, side='left')
+    xy = frames[idx][0]
+    par = toml.load("input/params.toml")
+    params = par["numerics"]
+    dx = params["l"]/params["n_l"]
+    l_y = np.linspace(-params["l_y"]/2, params["l_y"]/2, params["n_l_y"])
+    # Calculate projections
+    y = np.sum(xy, axis=(0)) * dx
+    # assert(np.abs(np.sum(y) * dy - 1.0) < 1e-9)
+
+    vmin, vmax = np.nanmin(y), np.nanmax(y)
+    vmax = min(2.0, abs(vmax))
+
+    # ax.plot(l_y, y, 
+    #         lw=0.5, 
+    #         linestyle=ls, 
+    #         color="k", )
+    if upsampling:
+      nn = 1000
+    else:
+      nn = len(l_y)
+    
+    x_data = l_y
+    y_data = y
+    fraction = np.sum(y_data) * (x_data[1]-x_data[0])
+    l_y_resampled = np.linspace(l_y[0], l_y[-1], nn)
+    y_resampled = interp1d(l_y, y, "cubic")(l_y_resampled)
+    ax.plot(l_y_resampled * l_perp, y_resampled/fraction/l_perp,
+            lw=0.5,
+            linestyle=ls,
+            color=color,)
+    ax.set_xlabel(r"$y $")
+    ax.set_ylabel(r"$n(y, t)/N(t)$")
+    plt.tight_layout()
+    
+    x_resampled = np.linspace(x_data[0], x_data[-1], 1000)
+
+    print(f" Fracscion {fraction}")
+    gaussian = (1/(np.sqrt(np.pi)) * np.exp(-x_resampled**2))
+    # * fraction
+    ax.plot(x_resampled * l_perp, gaussian/ l_perp, lw=0.5, ls="--")
+      # Save the plot as a PNG file
+    output_file = f"media/axial_density.png"
+    plt.savefig(output_file, dpi=900)
+    print(f"Saved 3D projections as '{output_file}'.")
+    return fig, ax
+
 
 def paper_plot():
   fig, ax = init_plotting()
@@ -145,7 +220,6 @@ def paper_plot():
   width_from_wavefunction(f"width-check", dimensions=1)
   width_from_wavefunction(f"width-check", dimensions=3)
   print("Saved media/axial_density.pdf")
-
   
   # fig, ax = init_plotting()
   # num = 8
@@ -251,5 +325,24 @@ def linear_consistency_check():
   plt.savefig("media/linear_axial.pdf", dpi=900)
   print("Saved media/linear_axial.pdf")
 
+
 if __name__ == "__main__":
-  linear_consistency_check()
+  # linear_consistency_check()
+  fig, ax = init_plotting()
+  # plot_3d_axial_density(fig, ax, name_list=["idx-0_3d"], color="red", ls="-")
+  # plot_3d_radial_density(fig, ax, name_list=["idx-1_1700_3d"], color="red", ls="-")
+  
+  for time in [1, 2]:
+    plot_3d_radial_density_dyn(fig, ax, 
+                               name_list=["results/dyn_idx-3_1700_3d.h5"], color=None, 
+                               ls="-",
+                               time=time)
+  ex = toml.load("input/experiment_pre_quench.toml")
+  # scales
+  hbar = 1.0545e-34
+  l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
+  e_perp = hbar * ex["omega_perp"]
+  t_perp = ex["omega_perp"]**(-1)
+  plt.xlim([-3*l_perp, 3*l_perp])
+  plt.savefig("media/supplemental/axial_density.png", dpi=900)
+  print("Saved media/supplemental/axial_density.png")

@@ -1,7 +1,7 @@
 /target
 /dumpster
 /media
-/results
+/results*
 /input*
 *.csv
 perf*

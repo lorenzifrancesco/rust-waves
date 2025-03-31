@@ -46,7 +46,7 @@ ex = toml.load("input/experiment_pre_quench.toml")
 a0 = physical_constants["Bohr radius"][0]
 l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
 e_perp = hbar * ex["omega_perp"]
-t_perp = ex["omega_perp"]**(-1) * 2 * np.pi
+t_perp = ex["omega_perp"]**(-1) 
 e_recoil = (np.pi * hbar / ex["d"])**2 / (2 * ex["m"])
 a0_l_perp = a0 / l_perp 
 

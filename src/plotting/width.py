@@ -12,7 +12,7 @@ import time
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
-recompute          = False
+recompute          = True
 plotting_evolution = True
 harmonium          = True
 
@@ -25,6 +25,9 @@ n = len(params)
 interleaved_points_n = 2
 x_new = np.linspace(0, n - 1, interleaved_points_n * n - 1)
 params = np.interp(x_new, np.arange(n), params)
+for (x, i), y in zip(enumerate(x_new), params):
+  print(f"{x}: {i}, {y}")
+exit()
 # params = [params[38]]
 # params = [2.0]
 if fig3:
@@ -35,8 +38,8 @@ else:
 
 cases = np.linspace(1200, 2200, 5, dtype=int)
 # cases = [cases[0]]
-cases = [1700]
-params = [-9.474, -4.281]
+# cases = [1700]
+# params = [-9.474, -4.281]
 
 print("_____ computing the widths ______")
 for cs in cases:
@@ -58,7 +61,7 @@ for cs in cases:
                       a_s = 20.0,
                       load_gs = False, 
                       t_imaginary=20.0, 
-                      n_atoms = cs)
+                      n_atoms = 1700) # TODO notice this! 
   l = Simulation(input_params="input/params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves")

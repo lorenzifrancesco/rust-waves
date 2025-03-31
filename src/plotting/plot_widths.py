@@ -177,9 +177,9 @@ def plot_widths_cumulative(noise=0.0,
     l = 8  # lattice sites
     # print(data_list)
     # FIXME, I should use the right number of a_s
-    all_widths = np.zeros((len(data_list), len(a_s)-1))
-    all_fractions = np.zeros((len(data_list), len(a_s)-1))
-    print(all_widths.shape)
+    # all_widths = np.zeros((len(data_list), len(a_s)-1))
+    # all_fractions = np.zeros((len(data_list), len(a_s)-1))
+    # print(all_widths.shape)
     for i, data in enumerate(data_list):
         print(f"Case: {i}")
         width = np.array(data["width_sim"])
@@ -194,9 +194,9 @@ def plot_widths_cumulative(noise=0.0,
         sketchy = 1
         if i == 2:
           sketchy = 1
-        print("len", len(width), " pigeon ", len(all_widths[0, :]))
-        all_widths[i, :] = width
-        all_fractions[i, :] = fraction
+        # print("len", len(width), " pigeon ", len(all_widths[0, :]))
+        # all_widths[i, :] = width
+        # all_fractions[i, :] = fraction
         plt.scatter(a_s*sketchy, width, s=2, marker='x')
         # possible = ~np.isnan(width)
         possible = ~np.isnan(width) & (a_s >= a_s_limit)
@@ -210,36 +210,36 @@ def plot_widths_cumulative(noise=0.0,
                   lw=0.7)
     
     
-    min_width = np.min(all_widths, axis=0)
-    max_width = np.max(all_widths, axis=0)
-    min_fraction = np.min(all_fractions, axis=0)
-    max_fraction = np.max(all_fractions, axis=0)
+    # min_width = np.min(all_widths, axis=0)
+    # max_width = np.max(all_widths, axis=0)
+    # min_fraction = np.min(all_fractions, axis=0)
+    # max_fraction = np.max(all_fractions, axis=0)
     
-    avg_width = np.mean(all_widths, axis=0)
-    a_s_resampled = np.linspace(a_s_filtered.min(), a_s_filtered.max(), 50)
+    # avg_width = np.mean(all_widths, axis=0)
+    # a_s_resampled = np.linspace(a_s_filtered.min(), a_s_filtered.max(), 50)
     
-    min_width = interp1d(a_s, min_width, kind='quadratic')(a_s_resampled)
-    plt.plot(a_s_resampled, min_width)
+    # min_width = interp1d(a_s, min_width, kind='quadratic')(a_s_resampled)
+    # plt.plot(a_s_resampled, min_width)
     
-    max_width = interp1d(a_s, max_width, kind='quadratic')(a_s_resampled)
-    plt.plot(a_s_resampled, max_width)
+    # max_width = interp1d(a_s, max_width, kind='quadratic')(a_s_resampled)
+    # plt.plot(a_s_resampled, max_width)
     
-    avg_width = interp1d(a_s, avg_width, kind='quadratic')(a_s_resampled)
-    plt.plot(a_s_resampled, avg_width, ls="-.")
+    # avg_width = interp1d(a_s, avg_width, kind='quadratic')(a_s_resampled)
+    # plt.plot(a_s_resampled, avg_width, ls="-.")
     
-    min_fraction = interp1d(a_s, min_fraction, kind='quadratic')(a_s_resampled)
-    max_fraction = interp1d(a_s, max_fraction, kind='quadratic')(a_s_resampled)
-    plt.plot(a_s_resampled, min_fraction, ls=":", color="red")
-    plt.plot(a_s_resampled, max_fraction, ls=":", color="red")
+    # min_fraction = interp1d(a_s, min_fraction, kind='quadratic')(a_s_resampled)
+    # max_fraction = interp1d(a_s, max_fraction, kind='quadratic')(a_s_resampled)
+    # plt.plot(a_s_resampled, min_fraction, ls=":", color="red")
+    # plt.plot(a_s_resampled, max_fraction, ls=":", color="red")
     # plt.ylim([0, 1])
-    df = pd.DataFrame({
-        "a_s": a_s_resampled,
-        "max_width": max_width,
-        "min_width": min_width,
-        "max_fraction": max_fraction,
-        "min_fraction": min_fraction
-    })
-    df.to_csv(f"results/widths/cumulative.csv", index=False)
+    # df = pd.DataFrame({
+    #     "a_s": a_s_resampled,
+    #     "max_width": max_width,
+    #     "min_width": min_width,
+    #     "max_fraction": max_fraction,
+    #     "min_fraction": min_fraction
+    # })
+    # df.to_csv(f"results/widths/cumulative.csv", index=False)
     print("Saved CSV to results/widths/cumulative.csv")
     plt.xlabel(r"$a_s/a_0$")
     plt.ylabel(r"$w_z$ [sites] ")
@@ -248,7 +248,6 @@ def plot_widths_cumulative(noise=0.0,
     # plt.legend(fontsize=8, labelspacing=0.2)
     plt.savefig("media//widths/widths_cumulative.pdf", dpi=300)
     print("Saved media//widths/widths_cumulative.pdf")
-    
     
     # ## Plotting the particle fraction
     # plt.clf()
@@ -435,7 +434,7 @@ if __name__ == "__main__":
     
     cases = np.linspace(1200, 2200, 10, dtype=int)
     # cases = cases[
-    cases = [1700]
+    # cases = [1700]
     plot_widths_cumulative(cases = cases)
     
     exit()

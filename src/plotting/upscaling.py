@@ -3,7 +3,7 @@ import pandas as pd
 from scipy.ndimage import zoom
 import matplotlib.pyplot as plt
 
-input_file =  "results/widths/colormap_1.csv"
+input_file =  "results/widths/0.csv"
 output_file = "results/widths/colormap_1_v2.csv"
 
 l_perp=1.591101125e-6 
