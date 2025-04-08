@@ -159,10 +159,10 @@ def load_hdf5_data_single_axis(filename):
   return t, l_x, frames, np.array(numbers)
 
 
-def plot_heatmap_h5_3d(name="1d", i=-1):
+def plot_heatmap_h5_3d(filename="1d", i=-1):
   par = toml.load("input/params.toml")
   params = par["numerics"]
-  t, l, frames, atom_number = load_hdf5_data_single_axis(f"results/{name}.h5") 
+  t, l, frames, atom_number = load_hdf5_data_single_axis(filename) 
   plt.figure(figsize=(3, 3))
   
   extent = [t.min(), t.max(), l.min(), l.max()]
@@ -401,4 +401,7 @@ if __name__ == "__main__":
   # plt.show()
   # plot_heatmap_h5_3d('dyn_idx-26_3d')
   # plot_heatmap_h5_3d('dyn_idx-12_3d')
-  plot_heatmap_h5('results/dyn_idx-0_1d.h5', 0)
+  losses = 5e-39
+  particles = 1200
+  for case in [x for x in range(0, 26)][::2]:
+    plot_heatmap_h5_3d('results-'+str(losses)+'/dyn_idx-'+str(case)+'_'+str(particles)+'_3d.h5', case)

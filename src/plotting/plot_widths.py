@@ -233,8 +233,9 @@ def plot_widths_cumulative(noise=0.0,
     max_fraction = interp1d(a_s, max_fraction, kind='quadratic')(a_s_resampled)
     avg_fraction = np.mean(all_fractions, axis=0)
     avg_fraction = interp1d(a_s, avg_fraction, kind='quadratic')(a_s_resampled)
-    # plt.plot(a_s_resampled, min_fraction, ls=":", color="red")
-    # plt.plot(a_s_resampled, max_fraction, ls=":", color="red")
+    plt.plot(a_s_resampled, min_fraction, ls=":", color="red")
+    plt.plot(a_s_resampled, max_fraction, ls=":", color="red")
+    plt.plot(a_s_resampled, avg_fraction, ls="--", color="red")
     # plt.ylim([0, 1])
     df = pd.DataFrame({
         "a_s": a_s_resampled,

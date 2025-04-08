@@ -12,7 +12,7 @@ import time
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
 recompute          = False
-plotting_evolution = False
+plotting_evolution = True
 harmonium          = True
 
 fig3 = False
@@ -20,12 +20,19 @@ fig3 = False
 default = Params.read("input/default.toml")
 d = default.dimension
 params = data_widths["a_s"].to_numpy()
+
 n = len(params)
 interleaved_points_n = 2
 x_new = np.linspace(0, n - 1, interleaved_points_n * n - 1)
 params = np.interp(x_new, np.arange(n), params)
-for (x, i), y in zip(enumerate(x_new), params):
-  print(f"{x}: {i}, {y}")
+params_original = params.copy()
+indexes = range(len(params))
+# make a subselection
+idx = 8
+params =  [params[idx]]
+indexes = [indexes[idx]]
+print("Selecting the case of params: ", params)
+assert(len(params) == len(indexes))
 # params = [params[38]]
 # params = [2.0]
 if fig3:
@@ -35,9 +42,9 @@ else:
   exp_data = "experiment"
 
 cases = np.linspace(1200, 2200, 3, dtype=int)
-# cases = [cases[-1]]
+cases = [cases[-1]]
 # params = [-9.474, -4.281]
-
+ 
 print("_____ computing the widths ______")
 for cs in cases:
   # time.sleep(2)
@@ -46,9 +53,9 @@ for cs in cases:
   else: 
     case = "_"+str(cs)
   # Initialize result arrays
-  result_widths = np.zeros(len(params))
-  result_widths_rough = np.zeros(len(params))
-  remaining_particle_fraction = np.zeros(len(params))
+  result_widths = np.zeros(len(params_original))
+  result_widths_rough = np.zeros(len(params_original))
+  remaining_particle_fraction = np.zeros(len(params_original))
 
   # print("a_s list: ", params)
   print("_____ computing the GS ______")
@@ -72,7 +79,7 @@ for cs in cases:
       plot_snap(f"results/pre-quench_{d}d"+case+".h5")
     elif d == 3:
       # plot_projections([f"pre-quench"+case+f"_{d}d"+case])
-      plot_heatmap_h5_3d(f"dyn_pre-quench"+case+f"_{d}d", -1)
+      plot_heatmap_h5_3d(f"results/dyn_pre-quench"+case+f"_{d}d.h5", -1)
       # movie(f"dyn_pre-quench"+case+f"_{d}d")
 
   pf0, w0 = width_from_wavefunction(f"pre-quench",
@@ -82,10 +89,8 @@ for cs in cases:
   
   # exit()
   ## Iterate over the scattering lengths
-  start_from = 0
-  for i, a_s in enumerate(params):
+  for i, a_s in zip(indexes, params):
     # a_s = a_s/2
-    i += start_from
     write_from_experiment("input/"+exp_data+".toml", 
                           "input/params.toml", 
                           f"idx-{i}"+case, 
@@ -110,21 +115,19 @@ for cs in cases:
         plot_snap(f"results/idx-{i}_{d}d"+case+".h5", i)
       elif d == 3:
         # plot_projections([f"idx-{i}"+case+f"_{d}d"], i)
-        plot_heatmap_h5_3d(f"dyn_idx-{i}"+case+f"_{d}d", i)
+        plot_heatmap_h5_3d(f"results/dyn_idx-{i}"+case+f"_{d}d.h5", i)
         # movie(f"dyn_idx-{i}"+case+f"_{d}d"+case, i)
         # movie(f"dyn_idx-{i}"+case+f"_{d}d", i)
-      
-    if start_from == 0:
-      try:
-        remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}"+case,
-            dimensions=d,
-            harmonium=harmonium,
-            particle_threshold=0.05)
-      except:
-        remaining_particle_fraction[i], result_widths[i] = 0.0, 0.0
-      # print("Width: ", result_widths[i])  
+    try:
+      remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}"+case,
+          dimensions=d,
+          harmonium=harmonium,
+          particle_threshold=0.05)
+    except:
+      remaining_particle_fraction[i], result_widths[i] = 0.0, 0.0
+    # print("Width: ", result_widths[i])  
   
-  if start_from == 0 and not fig3:
+  if len(params)==len(params_original) and not fig3:
     print("Saving the width csv file...")
     df = pd.DataFrame({
         "a_s": params,
