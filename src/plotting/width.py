@@ -5,15 +5,14 @@ from launch.rw import Params, write_from_experiment
 from scipy.constants import physical_constants
 from plot_widths import width_from_wavefunction, apply_noise_to_widths, plot_widths, plot_widths_cumulative
 import os
-import pandas
 from p1d_dyn_heatmap import *
 from p3d_snap_projections import *
 import time
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
-recompute          = True
-plotting_evolution = True
+recompute          = False
+plotting_evolution = False
 harmonium          = True
 
 fig3 = False
@@ -27,7 +26,6 @@ x_new = np.linspace(0, n - 1, interleaved_points_n * n - 1)
 params = np.interp(x_new, np.arange(n), params)
 for (x, i), y in zip(enumerate(x_new), params):
   print(f"{x}: {i}, {y}")
-exit()
 # params = [params[38]]
 # params = [2.0]
 if fig3:
@@ -36,9 +34,8 @@ if fig3:
 else:
   exp_data = "experiment"
 
-cases = np.linspace(1200, 2200, 5, dtype=int)
-# cases = [cases[0]]
-# cases = [1700]
+cases = np.linspace(1200, 2200, 3, dtype=int)
+# cases = [cases[-1]]
 # params = [-9.474, -4.281]
 
 print("_____ computing the widths ______")
@@ -59,9 +56,9 @@ for cs in cases:
                       "input/params.toml",
                       "pre-quench",
                       a_s = 20.0,
-                      load_gs = False, 
-                      t_imaginary=20.0, 
-                      n_atoms = 1700) # TODO notice this! 
+                      load_gs = False,
+                      t_imaginary = 20.0,
+                      n_atoms = 1700) # TODO notice this!
   l = Simulation(input_params="input/params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves")
@@ -99,9 +96,14 @@ for cs in cases:
                 output_file="results/",
                 rust="./target/release/rust_waves",)
     # exit() # save the zero simulation
-    if not os.path.exists(f"results/idx-{i}"+case+f"_{d}d.h5") or recompute:
+    name = f"results/idx-{i}"+case+f"_{d}d.h5"
+    print("Searching for ", name)
+    if not os.path.exists(name) or recompute:
       # print("Computing wavefunction for ", f"results/idx-{i}"+case+f"_{d}d.h5")
       l.run()
+      # pass
+    else:
+      print("  Found!")
     if plotting_evolution:
       if d == 1:
         plot_heatmap_h5(f"results/dyn_idx-{i}"+case+f"_{d}d.h5", i)
@@ -113,10 +115,13 @@ for cs in cases:
         # movie(f"dyn_idx-{i}"+case+f"_{d}d", i)
       
     if start_from == 0:
-      remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}"+case,
-          dimensions=d,
-          harmonium=harmonium,
-          particle_threshold=0.05)
+      try:
+        remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}"+case,
+            dimensions=d,
+            harmonium=harmonium,
+            particle_threshold=0.05)
+      except:
+        remaining_particle_fraction[i], result_widths[i] = 0.0, 0.0
       # print("Width: ", result_widths[i])  
   
   if start_from == 0 and not fig3:
@@ -140,7 +145,7 @@ for cs in cases:
                 case = case)
 
 if not fig3:
-  cases = np.linspace(1200, 2200, 10, dtype=int)
-  cases= cases[:-2]
+  cases = np.linspace(1200, 2200, 5, dtype=int)
+  # cases= cases[:-2]
   plot_widths_cumulative(cases = cases, 
-                         a_s_limit = -14)
+                         a_s_limit = -30)

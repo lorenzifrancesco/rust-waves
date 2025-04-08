@@ -169,7 +169,6 @@ def plot_heatmap_h5_3d(name="1d", i=-1):
   psi2_values = np.array([f for f in frames]).reshape(len(t), len(l)).T  # Load psi_squared dataset
   exp_par = toml.load("input/experiment.toml")
   l_perp = np.sqrt(hbar / (m * exp_par["omega_perp"]))
-  print("l_perp ", l_perp)
   x_min = l.min() * l_perp * 1e6
   x_max = l.max() * l_perp * 1e6
   x_min = -x_max
@@ -200,13 +199,15 @@ def plot_heatmap_h5_3d(name="1d", i=-1):
 
   # Heatmap plot
   ax_heatmap = fig.add_subplot(gs[0, 0])  
+  
   # for exporting the data
   psi2_values /= l_perp
   psi2_values *= 1700
   print(f"l_perp = {l_perp}, dl = {(l[1]-l[0])*l_perp}")
   df = pd.DataFrame(psi2_values)
-  print(df)
   df.to_csv("results/widths/"+str(i)+".csv", index=False, header=False)
+  
+  psi2_values *= l_perp / 1700
   ax_heatmap.imshow(
       psi2_values,
       cmap="viridis",
@@ -228,14 +229,13 @@ def plot_heatmap_h5_3d(name="1d", i=-1):
   # Add colorbar to the right of the entire plot
   cbar_ax = fig.add_subplot(gs[:, 1])  # Colorbar spans both rows
   norm = plt.Normalize(vmin=np.min(psi2_values), vmax=np.max(psi2_values))
-  sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+  sm = plt.cm.ScalarMappable(cmap="nipy_spectral", norm=norm)
   cbar = Colorbar(cbar_ax, sm, orientation='vertical')
   cbar.set_label(r'$n(x) \; [\mathrm{atom fraction} /\mathrm{m}^3]$', rotation=90)
 
   # Line plot for atom number
-  dz = (l[1]-l[0]) * l_perp
+  dz = (l[1]-l[0])
   atom_number = np.sum(psi2_values, axis=0) * dz
-  print(atom_number)
   ax_lineplot = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
   ax_lineplot.plot(atom_number, color='blue', lw=0.2)
   ax_lineplot.set_xlabel(r'$t \quad [\mathrm{ms}]$')
@@ -254,7 +254,7 @@ def plot_heatmap_h5_3d(name="1d", i=-1):
   # ax_lineplot.legend(loc="upper right")
   fig.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.15)
 
-  heatmap_filename = "media/3d_heatmap_idx-"+str(i)+".pdf"
+  heatmap_filename = "media/3d_heatmap_idx-"+str(i)+".png"
   plt.savefig(heatmap_filename, dpi=300, pad_inches=0.1)
   plt.close()
   print(f"Heatmap saved as {heatmap_filename}")

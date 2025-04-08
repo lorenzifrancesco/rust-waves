@@ -5,6 +5,7 @@ import toml
 from plot_widths import width_from_wavefunction
 from scipy.interpolate import interp1d
 from p3d_snap_projections import load_hdf5_data
+import pandas as pd
 
 def init_plotting():
   fig, ax = plt.subplots(1, 1, figsize=(3.9, 2.2), dpi=600)
@@ -151,6 +152,7 @@ def plot_3d_radial_density_dyn(fig,
   l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
   e_perp = hbar * ex["omega_perp"]
   t_perp = ex["omega_perp"]**(-1)
+  print("TPERP_>>>>", t_perp)
   print(f"Plotting at t={time*t_perp*1e3} ms")
   for name in name_list:
     t, frames = load_hdf5_data(name)
@@ -158,7 +160,8 @@ def plot_3d_radial_density_dyn(fig,
     xy = frames[idx][0]
     par = toml.load("input/params.toml")
     params = par["numerics"]
-    dx = params["l"]/params["n_l"]
+    dx = params["l"]   /(params["n_l"] - 1)
+    dy  = params["l_y"]/(params["n_l_y"] - 1)
     l_y = np.linspace(-params["l_y"]/2, params["l_y"]/2, params["n_l_y"])
     # Calculate projections
     y = np.sum(xy, axis=(0)) * dx
@@ -181,6 +184,8 @@ def plot_3d_radial_density_dyn(fig,
     fraction = np.sum(y_data) * (x_data[1]-x_data[0])
     l_y_resampled = np.linspace(l_y[0], l_y[-1], nn)
     y_resampled = interp1d(l_y, y, "cubic")(l_y_resampled)
+    assert(np.sum(y_data) / fraction * dy == 1.0)
+
     ax.plot(l_y_resampled * l_perp, y_resampled/fraction/l_perp,
             lw=0.5,
             linestyle=ls,
@@ -195,7 +200,7 @@ def plot_3d_radial_density_dyn(fig,
     gaussian = (1/(np.sqrt(np.pi)) * np.exp(-x_resampled**2))
     # * fraction
     ax.plot(x_resampled * l_perp, gaussian/ l_perp, lw=0.5, ls="--")
-      # Save the plot as a PNG file
+    # Save the plot as a PNG file
     output_file = f"media/axial_density.png"
     plt.savefig(output_file, dpi=900)
     print(f"Saved 3D projections as '{output_file}'.")
@@ -343,6 +348,20 @@ if __name__ == "__main__":
   l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
   e_perp = hbar * ex["omega_perp"]
   t_perp = ex["omega_perp"]**(-1)
-  plt.xlim([-3*l_perp, 3*l_perp])
+  # plt.xlim([-3*l_perp, 3*l_perp])
+  
+  x_data = ax.get_lines()[0].get_xdata()
+  print("number of lines: ", len(ax.get_lines()))
+  try: 
+    df = pd.DataFrame({
+          "y":        np.compress(np.abs(x_data) < 0.5e-5, x_data),
+          "t=1":      np.compress(np.abs(x_data) < 0.5e-5, ax.get_lines()[0].get_ydata()),
+          "t=2":      np.compress(np.abs(x_data) < 0.5e-5, ax.get_lines()[1].get_ydata()),
+          "gaussian": np.compress(np.abs(x_data) < 0.5e-5, ax.get_lines()[2].get_ydata()),
+      })
+    df.to_csv("results/transverse.csv", index=False)
+  except:
+    pass
+  print("Saved results/transverse.csv")
   plt.savefig("media/supplemental/axial_density.png", dpi=900)
   print("Saved media/supplemental/axial_density.png")
