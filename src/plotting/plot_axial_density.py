@@ -332,23 +332,31 @@ def linear_consistency_check():
 
 
 if __name__ == "__main__":
+  plt.rcParams.update({
+      "text.usetex": True,
+      "font.family": "serif",  # or 'sans-serif', or any LaTeX-supported font
+      "text.latex.preamble": r"\usepackage{amsmath}",  # or any other packages
+  })
+
   # linear_consistency_check()
   fig, ax = init_plotting()
   # plot_3d_axial_density(fig, ax, name_list=["idx-0_3d"], color="red", ls="-")
   # plot_3d_radial_density(fig, ax, name_list=["idx-1_1700_3d"], color="red", ls="-")
-  
-  for time in [1, 2]:
+  t_range = np.linspace(0.75, 2, 2)
+  for time in t_range:
     plot_3d_radial_density_dyn(fig, ax, 
-                               name_list=["results/dyn_idx-3_1700_3d.h5"], color=None, 
+                               name_list=["results/dyn_idx-3_1700_3d.h5"], 
+                               color=None, 
                                ls="-",
-                               time=time)
+                               time=time,
+                               upsampling=True)
   ex = toml.load("input/experiment_pre_quench.toml")
   # scales
   hbar = 1.0545e-34
   l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
   e_perp = hbar * ex["omega_perp"]
   t_perp = ex["omega_perp"]**(-1)
-  # plt.xlim([-3*l_perp, 3*l_perp])
+  plt.xlim([-3*l_perp, 3*l_perp])
   
   x_data = ax.get_lines()[0].get_xdata()
   print("number of lines: ", len(ax.get_lines()))

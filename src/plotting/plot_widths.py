@@ -138,7 +138,7 @@ def plot_widths_cumulative(noise=0.0,
     # Create the plot
     plt.plot(a_s, width, marker='+', linestyle='-', lw=0.5,
             color='b', label='experiment')
-    # cm = cm.viridis
+    # cm = cm.nipy_spectral
     # colors =
     for loss in [5e-39, 1e-38, 5e-38]:
         for idx, cs in enumerate(cases):
@@ -369,7 +369,7 @@ def plot_widths(noise=0.0,
             plt.scatter(a_s*sketchy, width, s=2, marker='x')
             possible = ~np.isnan(width)
             a_s_filtered = a_s[possible]
-            print("a_s_filtered = ", a_s_filtered)
+            # print("a_s_filtered = ", a_s_filtered)
             a_s_resampled = np.linspace(a_s_filtered.min(), a_s_filtered.max(), 100)
             width = interp1d(a_s[possible], width[possible], 
                              kind='linear', 

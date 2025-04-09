@@ -11,9 +11,11 @@ import time
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
 
-recompute          = False
+recompute          = True
 plotting_evolution = True
 harmonium          = True
+
+idx = np.array([3])
 
 fig3 = False
 
@@ -26,11 +28,12 @@ interleaved_points_n = 2
 x_new = np.linspace(0, n - 1, interleaved_points_n * n - 1)
 params = np.interp(x_new, np.arange(n), params)
 params_original = params.copy()
-indexes = range(len(params))
+indexes = np.array(range(len(params)))
+print(params_original)
+# exit()
 # make a subselection
-idx = 8
-params =  [params[idx]]
-indexes = [indexes[idx]]
+params =  params[idx]
+indexes = indexes[idx]
 print("Selecting the case of params: ", params)
 assert(len(params) == len(indexes))
 # params = [params[38]]
@@ -42,7 +45,7 @@ else:
   exp_data = "experiment"
 
 cases = np.linspace(1200, 2200, 3, dtype=int)
-cases = [cases[-1]]
+cases = [cases[1]]
 # params = [-9.474, -4.281]
  
 print("_____ computing the widths ______")
@@ -71,21 +74,22 @@ for cs in cases:
                 rust="./target/release/rust_waves")
   l.compile("release")
   # exit()
-  if not os.path.exists(f"results/pre-quench"+case+f"_{d}d.h5") or recompute:
-    l.run()
-  if plotting_evolution:
-    if d == 1:
-      plot_heatmap_h5(f"results/dyn_pre-quench"+case+f"_{d}d.h5")
-      plot_snap(f"results/pre-quench_{d}d"+case+".h5")
-    elif d == 3:
-      # plot_projections([f"pre-quench"+case+f"_{d}d"+case])
-      plot_heatmap_h5_3d(f"results/dyn_pre-quench"+case+f"_{d}d.h5", -1)
-      # movie(f"dyn_pre-quench"+case+f"_{d}d")
 
-  pf0, w0 = width_from_wavefunction(f"pre-quench",
-          dimensions=d, 
-          harmonium=harmonium)
-  print(f"pre-quench: fraction = {pf0:3.2f}, width = {w0:3.2f}")
+  # if not os.path.exists(f"results/pre-quench"+case+f"_{d}d.h5") or recompute:
+  #   l.run()
+  # if plotting_evolution:
+  #   if d == 1:
+  #     plot_heatmap_h5(f"results/dyn_pre-quench"+case+f"_{d}d.h5")
+  #     plot_snap(f"results/pre-quench_{d}d"+case+".h5")
+  #   elif d == 3:
+  #     # plot_projections([f"pre-quench"+case+f"_{d}d"+case])
+  #     plot_heatmap_h5_3d(f"results/dyn_pre-quench"+case+f"_{d}d.h5", -1)
+  #     # movie(f"dyn_pre-quench"+case+f"_{d}d")
+
+  # pf0, w0 = width_from_wavefunction(f"pre-quench",
+  #         dimensions=d, 
+  #         harmonium=harmonium)
+  # print(f"pre-quench: fraction = {pf0:3.2f}, width = {w0:3.2f}")
   
   # exit()
   ## Iterate over the scattering lengths
@@ -140,15 +144,13 @@ for cs in cases:
       df.to_csv(f"results/widths/widths_final_npse"+case+".csv", index=False)
     else:
       df.to_csv(f"results/widths/widths_final_{d}d"+case+".csv", index=False)
-  if not fig3:
     print("Plotting...")
-    plot_widths(noise=0.0, 
-                plot=True,
-                initial_number=3000,
-                case = case)
+    plot_widths(noise=0.0,
+                  plot=True,
+                  initial_number=3000,
+                  case = case)
 
-if not fig3:
-  cases = np.linspace(1200, 2200, 5, dtype=int)
-  # cases= cases[:-2]
-  plot_widths_cumulative(cases = cases, 
-                         a_s_limit = -30)
+  # cases = np.linspace(1200, 2200, 5, dtype=int)
+  # # cases= cases[:-2]
+  # plot_widths_cumulative(cases = cases,
+  #                        a_s_limit = -30)

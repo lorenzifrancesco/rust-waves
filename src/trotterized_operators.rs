@@ -1,6 +1,5 @@
 use crate::propagate::I;
 use crate::types::{Wavefunction1D, Wavefunction3D};
-use log::debug;
 use ndarray::{Array1, Array3, Zip};
 use ndrustfft::Complex;
 use std::f64::consts::PI;
