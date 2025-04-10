@@ -64,7 +64,7 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
     axes[0].set_ylabel(r"$z$")
     axes[1].set_xlabel(r"$y$")
     axes[1].set_ylabel(r"$z$")
-    
+ 
     # plt.colorbar(im1, ax=axes[0])
     # plt.colorbar(im2, ax=axes[1])
     plt.tight_layout()
@@ -81,7 +81,7 @@ def movie(name, i = -1):
     t, frames = load_hdf5_data(path)
     output_file = f"media/idx-{i}_heatmap_3d.gif"
     create_gif(t, frames, output_file)
-    
+
 def load_hdf5_data(filename):
   """Load HDF5 file and extract projections."""
   with h5py.File(filename, "r") as f:
@@ -104,12 +104,16 @@ def create_gif(t, frames, output_filename="movie.gif"):
   """Generate and save a GIF from the projection heatmaps."""
   images = []
   
-  fig, axes = plt.subplots(1, 2, figsize=(6, 2.2), width_ratios=[4, 1.5], dpi=600)
+  # two figures
+  # fig, axes = plt.subplots(1, 2, figsize=(6, 2.2), width_ratios=[4, 1.5], dpi=600)
+  # single figure
+  fig, ax = plt.subplots(figsize=(6, 2.2), dpi=600)
+  axes = [ax]
   par = toml.load("input/params.toml")
   params = par["numerics"]
   all_data = np.array([np.concatenate((xz.flatten(), yz.flatten())) for xz, yz in frames[:95]])
   vmin, vmax = np.nanmin(all_data), np.nanmax(all_data)
-  vmax = min(2.0, abs(vmax))
+  vmax = min(100.0, abs(vmax))
   cmap = "nipy_spectral"
   interpolation = "bicubic"
   
@@ -117,7 +121,7 @@ def create_gif(t, frames, output_filename="movie.gif"):
   for i, (xz, yz) in enumerate(frames):
       print(f"\rplotting frame {i:>10d}", end="")
       axes[0].clear()
-      axes[1].clear()
+      # axes[1].clear()
       im1 = axes[0].imshow(xz.T,
                            aspect="auto", 
                            origin="lower", 
@@ -126,24 +130,24 @@ def create_gif(t, frames, output_filename="movie.gif"):
                            extent=[-params["l"]/2, params["l"]/2, -params["l_z"]/2, params["l_z"]/2],
                            vmin=vmin, vmax=vmax)
       axes[0].set_aspect(0.5)
-      im2 = axes[1].imshow(yz.T,
-                           aspect="equal", 
-                           origin="lower", 
-                           cmap=cmap, 
-                           interpolation=interpolation,
-                           extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2], 
-                           vmin=vmin, vmax=vmax)
+      # im2 = axes[1].imshow(yz.T,
+      #                      aspect="equal", 
+      #                      origin="lower", 
+      #                      cmap=cmap, 
+      #                      interpolation=interpolation,
+      #                      extent=[-params["l_y"]/2, params["l_y"]/2, -params["l_z"]/2, params["l_z"]/2], 
+      #                      vmin=vmin, vmax=vmax)
       
       axes[0].set_title(rf"$xz \; (t = {t[i]:.1f} t_\perp)$", fontsize=8)
-      axes[1].set_title(rf"$yz \; (t = {t[i]:.1f} t_\perp)$", fontsize=8)
+      # axes[1].set_title(rf"$yz \; (t = {t[i]:.1f} t_\perp)$", fontsize=8)
       axes[0].set_xlabel(r"$x$")
       axes[0].set_ylabel(r"$z$")
-      axes[1].set_xlabel(r"$y$")
-      axes[1].set_ylabel(r"$z$")
+      # axes[1].set_xlabel(r"$y$")
+      # axes[1].set_ylabel(r"$z$")
       
-      # plt.colorbar(im1, ax=axes[0])
       if i==0:
-        plt.colorbar(im2, ax=axes[1])
+        plt.colorbar(im1, ax=axes[0])
+      #   plt.colorbar(im1, ax=axes[1])
 
       plt.tight_layout()
       
@@ -159,9 +163,6 @@ def create_gif(t, frames, output_filename="movie.gif"):
   images.extend([images[-1]] * 20)
   imageio.mimsave(output_filename, images, fps=10, loop=0)
   print(f"Saved GIF: {output_filename}")
-  
+
 if __name__ == "__main__":
-  num = 0
-  # movie(f"dyn_idx-{num}_3d", num)
-  movie(f"dyn_idx-0_3d", num)
-  # plot_projections(["pre-quench_3d"])
+  movie("dyn_linear_3d", -1)

@@ -89,29 +89,43 @@ def write_from_experiment(
   output_filename="input/params.toml", 
   title="exp", 
   a_s=None, 
-  load_gs=False):
+  load_gs=False, 
+  g = None, 
+  v_0 = None, 
+  kl = None,
+  free_x = False, 
+  t_imaginary = 8.0,
+  n_atoms = None):
     ex = toml.load(input_filename)
     
-    # scales
+    # scales (SI)
     a0 = physical_constants["Bohr radius"][0]
     l_perp = np.sqrt(hbar/(ex["omega_perp"]*ex["m"]))
     e_perp = hbar * ex["omega_perp"]
-    t_perp = ex["omega_perp"]**(-1) * 2 * pi 
-    e_recoil = (pi * hbar / ex["d"])**2 / ex["m"]
+    # t_perp = ex["omega_perp"]**(-1) * 2 * pi
+    t_perp = ex["omega_perp"]**(-1)
     
+    e_recoil = (pi * hbar / ex["d"])**2 / (2 * ex["m"])
     # normalized
     
-    if ex["omega_x"] != 0:
+    if ex["omega_x"] != 0 and (not free_x):
       l_x = np.sqrt(hbar/(ex["omega_x"]*ex["m"])) / l_perp
     else:
       l_x = 1e300
+    
     if a_s == None:
-      a_s = ex["a_s"] 
-    g = 2 * a0 * a_s * (ex["n_atoms"]-1) / l_perp
-    t = ex["t_f"]/t_perp
+      a_s = ex["a_s"]
+      
+    if n_atoms == None:
+      n_atoms = ex["n_atoms"]
+    
+    if g == None:
+      g = 2 * a0 * a_s * (n_atoms-1) / l_perp
+      
     # raise("fix the following")
-    g5 = ex["l_3"] / l_perp**6 * t_perp * ex["n_atoms"]**2 / 2
-    v_0 = ex["v_0"] * e_recoil / e_perp
+    g5 = ex["l_3"] / l_perp**6 * t_perp * n_atoms**2 / 2
+    if v_0 == None:
+      v_0 = ex["v_0"] * e_recoil / e_perp
     p = Params.read("input/default.toml")
     assert(p.title == "default")
     p.title=title
@@ -119,17 +133,17 @@ def write_from_experiment(
     p.l_harm_x=float(l_x)
     p.v0=float(v_0)
     p.dl = float(ex["d"] / l_perp)
-    p.t =float(t)
     if load_gs:
       p.im_t = False
       p.w = -1.0
       p.g5 = float(g5) 
+      t = ex["t_f"] / t_perp
+      p.t =float(t)
     else: 
       p.im_t = True
-      p.t = 8.0
+      p.t = t_imaginary
       p.g5 = 0.0 
-      p.w = 1.5
-
+      p.w = 0.6 # with this number the NPSE has a good initial state for all the theoretically noncollapsing evolution. 
     p.write(output_filename)
     return
 

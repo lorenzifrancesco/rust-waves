@@ -45,9 +45,11 @@ fn simulation_1d(params: &Params) {
     let l_range = symmetric_range(l, h_l);
     assert!(l_range.len() == n_l, "The range is not correct");
     let mut initial_wave;
-    if params.initial.w == -1.0 {
+    if params.initial.w <= 0.0 {
+        debug!("Loading the 'results/pre-quench_1d.h5' wavefunction...");
         initial_wave = load_1d_wavefunction("results/pre-quench_1d.h5").unwrap();
     } else {
+        debug!("Creating the initial wavefunction as a Gaussian...");
         initial_wave = Wavefunction1D {
             field: l_range
                 .iter()
@@ -119,8 +121,8 @@ fn simulation_3d(params: &Params) {
     // let k_range = k_vector(&l_range);
 
     let mut initial_wave;
-    if params.initial.w == -1.0 {
-        info!("Loading the pre-quench wavefunction...");
+    if params.initial.w <= 0.0 {
+        debug!("Loading the 'results/pre-quench_3d.h5' wavefunction...");
         initial_wave = load_3d_wavefunction("results/pre-quench_3d.h5").unwrap();
     } else {
         info!("Creating the initial wavefunction as a Gaussian...");

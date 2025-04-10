@@ -5,6 +5,7 @@ use ndarray::Array2;
 use ndrustfft::Complex;
 use ndrustfft::{ndfft_par, ndifft_par, FftHandler};
 use rustfft;
+use core::f64;
 use std::f64::consts::PI;
 use std::time::Instant;
 use std::vec;
@@ -26,8 +27,10 @@ pub fn propagate_1d(
         info!("Imaginary time propagation");
         h_t.im = -params.numerics.dt;
     } else {
+        info!("Real time propagation");
         h_t.re = params.numerics.dt;
     }
+    debug!("ht = {} ", h_t);
     let n_t = ((*params).physics.t / params.numerics.dt).round() as u32;
     debug!("Running using n_t = {}, and ht = {}", n_t, h_t.norm());
     let g = (*params).physics.g;
@@ -44,6 +47,7 @@ pub fn propagate_1d(
       params.physics.l_harm_x, 
       params.physics.v0,
       params.physics.dl);
+    
     // Plan the transforms
     let mut planner: rustfft::FftPlanner<f64> = rustfft::FftPlanner::<f64>::new();
     let fft = planner.plan_fft_forward(n_l);
@@ -98,11 +102,15 @@ pub fn propagate_1d(
         // }
         // println!("=======")
         if idt % save_interval == 0 {
-            for i in 0..n_l {
-                saved_psi.psi[cnt].field[i] = psi0.field[i];
-            }
-            cnt += 1;
+          if cnt >= params.options.n_saves {
+              break;
+          }
+          for i in 0..n_l {
+              saved_psi.psi[cnt].field[i] = psi0.field[i];
+          }
+          cnt += 1;
         }
+        saved_psi.psi[params.options.n_saves-1] = psi0.clone();
     }
     saved_psi
 }
@@ -149,6 +157,7 @@ pub fn propagate_3d(
     let size_x = psi0.l_x.len();
     let size_y = psi0.l_y.len();
     let size_z = psi0.l_z.len();
+    let dv: f64 = (psi0.l_x[1] - psi0.l_x[0]) * (psi0.l_y[1] - psi0.l_y[0]) * (psi0.l_z[1] - psi0.l_z[0]);
     let handler_x = FftHandler::new(size_x);
     let handler_y = FftHandler::new(size_y);
     let handler_z = FftHandler::new(size_z);
@@ -185,8 +194,8 @@ pub fn propagate_3d(
     warn!("we are overwriting the first element in saved_psi");
     let mut cnt = 0;
     info!(
-        "Starting the propagation. Time steps = {}, save steps = {}",
-        n_t, params.options.n_saves
+        "Starting the propagation. Time steps = {}, save steps = {}, space ={}x{}",
+        n_t, params.options.n_saves, size_x, size_y
     );
     for idt in 0..n_t {
         ndfft_par(&psi0.field, &mut buffer_1, &handler_x, 0);
@@ -215,8 +224,16 @@ pub fn propagate_3d(
         }
         ns = normalization_factor_3d(psi0);
         assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
-
+        let max_single_cell_prob = dv *  psi0.field.iter().map(|x| x.norm_sqr()).fold(0.0, f64::max);
+        warn!("Max single cell prob = {}", max_single_cell_prob);
+        if max_single_cell_prob > 0.05 {
+            panic!("The wavefunction has exploded. Max norm = {}", max_single_cell_prob);
+        }
+        
         if idt % save_interval == 0 {
+            if cnt >= params.options.n_saves {
+              break;
+            }
             debug!("saving step {}", cnt);
             saved_psi.movie[cnt] = Projections3D::new(psi0);
             cnt += 1;
