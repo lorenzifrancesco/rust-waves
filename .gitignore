@@ -1,7 +1,8 @@
 /target
 
-media
-results
+/media*
+/results*
+/dumpster*
 input*
 *.csv
 perf*
