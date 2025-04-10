@@ -194,8 +194,8 @@ pub fn propagate_3d(
     warn!("we are overwriting the first element in saved_psi");
     let mut cnt = 0;
     info!(
-        "Starting the propagation. Time steps = {}, save steps = {}",
-        n_t, params.options.n_saves
+        "Starting the propagation. Time steps = {}, save steps = {}, space ={}x{}",
+        n_t, params.options.n_saves, size_x, size_y
     );
     for idt in 0..n_t {
         ndfft_par(&psi0.field, &mut buffer_1, &handler_x, 0);

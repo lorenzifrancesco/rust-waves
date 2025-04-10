@@ -75,21 +75,21 @@ for cs in cases:
   l.compile("release")
   # exit()
 
-  # if not os.path.exists(f"results/pre-quench"+case+f"_{d}d.h5") or recompute:
-  #   l.run()
-  # if plotting_evolution:
-  #   if d == 1:
-  #     plot_heatmap_h5(f"results/dyn_pre-quench"+case+f"_{d}d.h5")
-  #     plot_snap(f"results/pre-quench_{d}d"+case+".h5")
-  #   elif d == 3:
-  #     # plot_projections([f"pre-quench"+case+f"_{d}d"+case])
-  #     plot_heatmap_h5_3d(f"results/dyn_pre-quench"+case+f"_{d}d.h5", -1)
-  #     # movie(f"dyn_pre-quench"+case+f"_{d}d")
+  if not os.path.exists(f"results/pre-quench"+case+f"_{d}d.h5") or recompute:
+    l.run()
+  if plotting_evolution:
+    if d == 1:
+      plot_heatmap_h5(f"results/dyn_pre-quench"+case+f"_{d}d.h5")
+      plot_snap(f"results/pre-quench_{d}d"+case+".h5")
+    elif d == 3:
+      # plot_projections([f"pre-quench"+case+f"_{d}d"+case])
+      plot_heatmap_h5_3d(f"results/dyn_pre-quench"+case+f"_{d}d.h5", -1)
+      # movie(f"dyn_pre-quench"+case+f"_{d}d")
 
-  # pf0, w0 = width_from_wavefunction(f"pre-quench",
-  #         dimensions=d, 
-  #         harmonium=harmonium)
-  # print(f"pre-quench: fraction = {pf0:3.2f}, width = {w0:3.2f}")
+  pf0, w0 = width_from_wavefunction(f"pre-quench",
+          dimensions=d, 
+          harmonium=harmonium)
+  print(f"pre-quench: fraction = {pf0:3.2f}, width = {w0:3.2f}")
   
   # exit()
   ## Iterate over the scattering lengths

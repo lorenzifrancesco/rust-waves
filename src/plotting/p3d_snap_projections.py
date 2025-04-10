@@ -163,6 +163,6 @@ def create_gif(t, frames, output_filename="movie.gif"):
   images.extend([images[-1]] * 20)
   imageio.mimsave(output_filename, images, fps=10, loop=0)
   print(f"Saved GIF: {output_filename}")
-  
+
 if __name__ == "__main__":
   movie("dyn_linear_3d", -1)
