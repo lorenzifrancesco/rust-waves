@@ -27,8 +27,9 @@ class Simulation:
     self.output_file = output_file
     self.rust = rust
     self.rust_mode = rust_mode
-    self.dimension = toml.load(self.input_params)["physics"]["dimension"]
- 
+    self.cf = toml.load(self.input_params)
+    self.dimension = self.cf["physics"]["dimension"]
+
   def compile(self, rust_mode):
     if rust_mode == "debug":
       rust_compile = 'cargo build'

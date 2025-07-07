@@ -13,9 +13,10 @@ where we used the notation similar to nonlinear fiber optics: $x$ as space and $
 
 ## Method
 We use Split Step Fourier Mehtod (SSFM) with Strang splitting.
-## Comments
+<!-- ## Comments
 We expect to have an improved reliability development experience with respect to Julia,
 and a slightly slower development due to absence of dynamic types.
 GPU support will be also more difficult
 Performance is critical and we should  
 
+In the case of a cylindrically symmetric potential, one can use a field transformation to keep the radial operator in the same shape in the 1D method, but changing the potential and the nonlinear term. The result is a 2D equation where the laplacian is cartesian. -->

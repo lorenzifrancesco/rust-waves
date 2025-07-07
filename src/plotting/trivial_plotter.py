@@ -1,25 +1,24 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Load CSV file
-filename = "results/transverse.csv"  # Change this to your actual file path
+filename = "input/3c-multisoliton.csv"  # Change this to your actual file path
 df = pd.read_csv(filename)
 
-# Extract x values (first column) and y values (other columns)
 x = df.iloc[:, 0]
 y_values = df.iloc[:, 1:]
 
-# Plot all y columns
-plt.figure(figsize=(8, 6))
-for column in y_values:
-    plt.plot(x, y_values[column], label=column)
+# Apply rolling mean smoothing to each column in y_values
+window_size = 3  # You can change this value (odd numbers like 5, 7, 9 work well)
+y_smoothed = y_values.rolling(window=window_size, center=True).mean()
 
-# Labeling
+plt.figure(figsize=(8, 6))
+for column in y_smoothed:
+    plt.plot(x, y_smoothed[column], label=column)
+
 plt.xlabel("X Axis")
 plt.ylabel("Y Axis")
-plt.title("Plot from CSV Data")
+plt.title("Smoothed Plot from CSV Data")
 plt.legend()
 plt.grid(True)
 
-# Show the plot
 plt.show()
