@@ -14,7 +14,7 @@ data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"
 recompute          = True
 plotting_evolution = False
 # dimension
-default = Params.read("input/default.toml")
+default = Params.read("input/_default.toml")
 d = default.dimension
 params = data_widths["a_s"].to_numpy()
 # params = [params[0]]
@@ -31,11 +31,11 @@ remaining_particle_fraction = np.zeros(len(params))
 print("a_s list: ", params)
 print("_____ computing the GS ______")
 write_from_experiment("input/experiment_pre_quench.toml",
-                     "input/params.toml",
+                     "input/_params.toml",
                      "pre-quench",
                      a_s = 20.0,
                      load_gs = False)
-l = Simulation(input_params="input/params.toml",
+l = Simulation(input_params="input/_params.toml",
                output_file="results/",
                rust="./target/release/rust_waves",
                dimension=d)
@@ -55,11 +55,11 @@ if plotting_evolution:
 print("_____ computing the widths ______")
 for i, a_s in enumerate(params):
   write_from_experiment("input/experiment.toml", 
-                        "input/params.toml", 
+                        "input/_params.toml", 
                         f"idx-{i}", 
                         a_s=a_s, 
                         load_gs=True)
-  l = Simulation(input_params="input/params.toml",
+  l = Simulation(input_params="input/_params.toml",
                output_file="results/",
                rust="./target/release/rust_waves",
                dimension=d)

@@ -20,7 +20,7 @@ def plot_1d_axial_density(fig, ax, name_list = ["psi_3d", "psi_3d_2"], color="bl
     field_key = "psi_squared"
     l_x_key = "l"
 
-    par = toml.load("input/params.toml")
+    par = toml.load("input/_params.toml")
     params = par["numerics"]
     with h5py.File(file_name, "r") as file:
         assert l_x_key in file, f"Key 'l_x' is missing, this does not seem to be a 3D dataset."
@@ -42,7 +42,7 @@ def plot_1d_axial_density(fig, ax, name_list = ["psi_3d", "psi_3d_2"], color="bl
 
 
 def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-"):
-    # Load the 3D array from the HDF5 file
+  # Load the 3D array from the HDF5 file
   for name in name_list:
     file_name = "results/"+name+".h5"
     field_key = "psi_squared"
@@ -50,7 +50,7 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
     l_y_key = "l_y"
     l_z_key = "l_z"
 
-    par = toml.load("input/params.toml")    
+    par = toml.load("input/_params.toml")    
     params = par["numerics"]
     dl =par["physics"]["dl"]
     
@@ -94,7 +94,7 @@ def plot_3d_radial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-"
     l_y_key = "l_y"
     l_z_key = "l_z"
 
-    par = toml.load("input/params.toml")    
+    par = toml.load("input/_params.toml")    
     params = par["numerics"]
     dl =par["physics"]["dl"]
     
@@ -159,7 +159,7 @@ def plot_3d_radial_density_dyn(fig,
     idx = np.searchsorted(t, time, side='left')
     xy = frames[idx][0]
     print("shape of the xy: ", np.shape(xy))
-    par = toml.load("input/params.toml")
+    par = toml.load("input/_params.toml")
     params = par["numerics"]
     dx = params["l"]   /(params["n_l"] - 1)
     dy  = params["l_y"]/(params["n_l_y"] - 1)
@@ -304,7 +304,7 @@ def linear_consistency_check():
   
   # linear wavefunction as per SPR transverse ansatz
   # ax.plot()
-  par = toml.load("input/params.toml")    
+  par = toml.load("input/_params.toml")    
   dl =par["physics"]["dl"]
   x_data = ax.get_lines()[0].get_xdata()
   dy = (x_data[1]-x_data[0])* dl

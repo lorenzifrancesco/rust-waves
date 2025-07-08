@@ -16,7 +16,7 @@ data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"
 recompute          = True
 plotting_evolution = False
 # dimension
-default = Params.read("input/default.toml")
+default = Params.read("input/_default.toml")
 d = default.dimension
 params = data_widths["a_s"].to_numpy()
 # params = [params[0]]
@@ -32,14 +32,14 @@ the collapse is happening or not
 def collapse_or_not(g, v0, kl):
   
   write_from_experiment("input/experiment_pre_quench.toml",
-                      "input/params.toml",
+                      "input/_params.toml",
                       "pre-quench",
                       g = g,
                       load_gs = False, 
                       v_0 = v0, 
                       free_x=True, 
                       t_imaginary = 100.0)
-  l = Simulation(input_params="input/params.toml",
+  l = Simulation(input_params="input/_params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves")
   l.compile("release")

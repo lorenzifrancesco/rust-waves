@@ -25,7 +25,7 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1):
       t = np.array(f["t"])  # Load t (time coordinate)
       psi_squared = np.array(f["psi_squared"]).reshape(len(t), len(l))  # Load psi_squared dataset
   
-  par = toml.load("input/params.toml")
+  par = toml.load("input/_params.toml")
   plt.figure(figsize=(3, 3))
   dl = par["physics"]["dl"]
   # extent = [t.min(), t.max(), l.min(), l.max()]
@@ -160,7 +160,7 @@ def load_hdf5_data_single_axis(filename):
 
 
 def plot_heatmap_h5_3d(filename="1d", i=-1):
-  par = toml.load("input/params.toml")
+  par = toml.load("input/_params.toml")
   params = par["numerics"]
   t, l, frames, atom_number = load_hdf5_data_single_axis(filename) 
   plt.figure(figsize=(3, 3))

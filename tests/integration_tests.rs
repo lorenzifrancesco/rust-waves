@@ -12,7 +12,7 @@ use toml;
 #[test]
 pub fn basic_1d_soliton() {
     // TODO put standard params here
-    let input = Path::new("input/params.toml");
+    let input = Path::new("input/_params.toml");
     let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
     let mut params: Params = toml::from_str(&contents).expect("Failed to load the config");
     params.physics.t = 200.0;
@@ -93,7 +93,7 @@ pub fn basic_1d_soliton() {
 
 pub fn can_you_even_npse_collapse() {
     // TODO put standard params here
-    let input = Path::new("input/params.toml");
+    let input = Path::new("input/_params.toml");
     let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
     let mut params: Params = toml::from_str(&contents).expect("Failed to load the config");
     params.physics.t = 200.0;

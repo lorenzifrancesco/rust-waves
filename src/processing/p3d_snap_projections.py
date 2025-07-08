@@ -14,7 +14,7 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
     l_y_key = "l_y"
     l_z_key = "l_z"
 
-    par = toml.load("input/params.toml")
+    par = toml.load("input/_params.toml")
     params = par["numerics"]
     with h5py.File(file_name, "r") as file:
         assert l_x_key in file, f"Key 'l_x' is missing, this does not seem to be a 3D dataset."
@@ -109,7 +109,7 @@ def create_gif(t, frames, output_filename="movie.gif"):
   # single figure
   fig, ax = plt.subplots(figsize=(6, 2.2), dpi=600)
   axes = [ax]
-  par = toml.load("input/params.toml")
+  par = toml.load("input/_params.toml")
   params = par["numerics"]
   all_data = np.array([np.concatenate((xz.flatten(), yz.flatten())) for xz, yz in frames[:95]])
   vmin, vmax = np.nanmin(all_data), np.nanmax(all_data)

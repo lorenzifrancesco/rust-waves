@@ -19,7 +19,7 @@ idx = np.array([3])
 
 fig3 = False
 
-default = Params.read("input/default.toml")
+default = Params.read("input/_default.toml")
 d = default.dimension
 params = data_widths["a_s"].to_numpy()
 
@@ -63,13 +63,13 @@ for cs in cases:
   # print("a_s list: ", params)
   print("_____ computing the GS ______")
   write_from_experiment("input/"+exp_data+"_pre_quench.toml",
-                      "input/params.toml",
+                      "input/_params.toml",
                       "pre-quench",
                       a_s = 20.0,
                       load_gs = False,
                       t_imaginary = 20.0,
                       n_atoms = 1700) # TODO notice this!
-  l = Simulation(input_params="input/params.toml",
+  l = Simulation(input_params="input/_params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves")
   l.compile("release")
@@ -96,12 +96,12 @@ for cs in cases:
   for i, a_s in zip(indexes, params):
     # a_s = a_s/2
     write_from_experiment("input/"+exp_data+".toml", 
-                          "input/params.toml", 
+                          "input/_params.toml", 
                           f"idx-{i}"+case, 
                           a_s=a_s,
                           load_gs=True,
                           n_atoms=cs)
-    l = Simulation(input_params="input/params.toml",
+    l = Simulation(input_params="input/_params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves",)
     # exit() # save the zero simulation
@@ -129,7 +129,7 @@ for cs in cases:
           particle_threshold=0.05)
     except:
       remaining_particle_fraction[i], result_widths[i] = 0.0, 0.0
-    # print("Width: ", result_widths[i])  
+    # print("Width: ", result_widths[i])
   
   if len(params)==len(params_original) and not fig3:
     print("Saving the width csv file...")

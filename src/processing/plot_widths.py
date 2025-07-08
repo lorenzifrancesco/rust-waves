@@ -23,7 +23,7 @@ def width_from_wavefunction(title,
                             particle_threshold=0.3):
     filename = "".join(["results/", title,"_", str(dimensions), "d.h5"])
     # print("Computing wavefunction for ", filename)
-    params = Params.read("input/params.toml")
+    params = Params.read("input/_params.toml")
     # we sum only on [-4, +4] lattice sites.
     min_idx = params.dl * -4
     max_idx = -min_idx

@@ -52,7 +52,7 @@ class Simulation:
     return
  
 if __name__ == "__main__":
-  l = Simulation(input_params="input/params.toml",
+  l = Simulation(input_params="input/_params.toml",
                  output_file="results/",
                  rust="./target/debug/rust_waves")
   l.compile("debug")

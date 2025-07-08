@@ -18,7 +18,7 @@ use simple_logger;
 
 fn main() {
     simple_logger::init_with_level(Level::Debug).unwrap();
-    let input: &Path = Path::new("input/params.toml");
+    let input: &Path = Path::new("input/_params.toml");
     let contents = fs::read_to_string(input).expect("Failed to read the TOML file");
     let params: Params = toml::from_str(&contents).expect("Failed to load the config");
     if params.physics.dimension == 3 {

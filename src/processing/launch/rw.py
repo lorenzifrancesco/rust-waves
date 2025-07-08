@@ -86,7 +86,7 @@ class Params:
 
 def write_from_experiment(
   input_filename="input/experiment.toml", 
-  output_filename="input/params.toml", 
+  output_filename="input/_params.toml", 
   title="exp", 
   a_s=None, 
   load_gs=False, 
@@ -126,7 +126,7 @@ def write_from_experiment(
     g5 = ex["l_3"] / l_perp**6 * t_perp * n_atoms**2 / 2
     if v_0 == None:
       v_0 = ex["v_0"] * e_recoil / e_perp
-    p = Params.read("input/default.toml")
+    p = Params.read("input/_default.toml")
     assert(p.title == "default")
     p.title=title
     p.g  = float(g)
@@ -142,13 +142,13 @@ def write_from_experiment(
     else: 
       p.im_t = True
       p.t = t_imaginary
-      p.g5 = 0.0 
+      p.g5 = 0.0
       p.w = 0.6 # with this number the NPSE has a good initial state for all the theoretically noncollapsing evolution. 
     p.write(output_filename)
     return
 
 if __name__ == "__main__":
-    p = Params.read("input/default.toml")
+    p = Params.read("input/_default.toml")
     print(p)
     p.write("input/params2.toml")
     p2 = Params.read("input/params2.toml")

@@ -31,7 +31,7 @@ class FileChangeHandler(FileSystemEventHandler):
 
 
 if __name__ == "__main__":
-    sim = rust_launcher.Simulation(input_params="input/params.toml",
+    sim = rust_launcher.Simulation(input_params="input/_params.toml",
                                    output_file="results/",
                                    rust="./target/debug/rust_waves")
     exec(sim)

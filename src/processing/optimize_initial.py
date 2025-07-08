@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.signal import find_peaks
 import numpy as np
+from launch.rw import write_from_experiment
+import re
 
 """
 x in lattice sites,
 y in arb units
 """
-
-
 def get_axial_density_csv(filename):
     df = pd.read_csv(filename)
     df = df.sort_values(by='x')
@@ -27,6 +27,8 @@ def get_axial_density_csv(filename):
 
 def after_run(l,
               filename, cf):
+    name = re.search(r"dyn_(.+?)\.h5", filename).group(1)
+    print(">> after_run: ", name)
     if l.dimension == 1:
         # print(">> plotting heatmap")
         # p1d_dyn_heatmap.plot_heatmap_h5(
@@ -34,20 +36,22 @@ def after_run(l,
         print(">> plotting axial density")
         fig, ax = plot_axial_density.init_plotting()
         plot_axial_density.plot_1d_axial_density(
-            fig, ax, name_list=["3c_1d"],)
+            fig, ax, name_list=[name],)
 
-        x, y = get_axial_density_csv("input/3c-multisoliton.csv")
+        line = ax.get_lines()[0]
+        y = line.get_ydata()
+        y_max = max(y)
+        x, y = get_axial_density_csv("input/3c-initial.csv")
         peaks, _ = find_peaks(y)
         peak_index = peaks[np.argmax(y[peaks])]
         peak_x = x[peak_index]
-        peak_y = y[peak_index]
-        level = 0.35
+        y_floor = (y[0]+y[-1])/2
+        peak_y = y[peak_index] - y_floor
+        level = y_max
         yfix = level
         x_shift = -peak_x
         x = x + x_shift
-        y = y / peak_y * level
-        y_floor = (y[0]+y[-1])/2 - 0.01
-        y = y-y_floor
+        y = (y-y_floor) / peak_y * level
         ax.plot(x * cf["physics"]["dl"], y,
                 label="3c-multisoliton", color="red", ls="-")
         plt.xlim([-6, 6])
@@ -67,17 +71,28 @@ def continuously_update_screen():
     try:
         last_mtime = 0
         while True:
-            current_mtime = os.path.getmtime('input/_params.toml')
+            current_mtime = os.path.getmtime('input/experiment_pre_quench.toml')
             if current_mtime != last_mtime:
                 last_mtime = current_mtime
                 os.system('clear')
-
+                write_from_experiment(
+                    input_filename="input/experiment_pre_quench.toml",
+                    output_filename="input/_params.toml",
+                    title="pre-quench",
+                    load_gs=False,
+                    t_imaginary=20.0,
+                    free_x=False,
+                    a_s=None,
+                    g=None,
+                    v_0=None
+                )
                 l = rust_launcher.Simulation(
                     input_params="input/_params.toml",
                     output_file="results/",
                     rust="./target/release/rust_waves")
                 filename = "results/dyn_" + \
                     l.cf["title"]+"_"+str(int(l.dimension))+"d.h5"
+                filename = "results/dyn_pre-quench_1d.h5"
                 # print("Dimension: ", l.dimension)
                 assert (l.dimension == 1)
                 l.compile("release")
@@ -90,7 +105,6 @@ def continuously_update_screen():
 
     except KeyboardInterrupt:
         print("Stopped by user")
-
 
 if __name__ == "__main__":
     continuously_update_screen()
