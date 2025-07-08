@@ -19,7 +19,7 @@ def get_axial_density_csv(filename):
     df = df.sort_values(by='x')
     x = df.iloc[:, 0]
     y_values = df.iloc[:, 1:]
-    window_size = 3
+    window_size = 5
     y_smoothed = y_values.rolling(window=window_size, center=True).mean()
     return np.array(x), np.array(y_smoothed).ravel()
 
@@ -60,7 +60,7 @@ def after_run(l,
     x = x + x_shift
     y = (y-y_floor) / peak_y * level
     ax.plot(x, y,
-            label="3c-multisoliton", color="red", ls="-")
+            label="3c-multisoliton", color="gray", ls="--", lw=1.3)
     plt.xlim([-6, 6])
     filename = "input/3c-multisoliton.csv"
     plt.savefig("media/axial-test.pdf", dpi=900)
@@ -96,7 +96,7 @@ def continuously_update_screen():
                 # print("Dimension: ", l.dimension)
                 l.compile("release")
 
-                l.run()
+                # l.run()
 
                 after_run(l, filename, l.cf)
 

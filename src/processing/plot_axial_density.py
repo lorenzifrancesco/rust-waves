@@ -6,6 +6,23 @@ from plot_widths import width_from_wavefunction
 from scipy.interpolate import interp1d
 from projections_volumetric import load_hdf5_data
 import pandas as pd
+import os
+
+def get_available_filename(filepath):
+  """
+  Returns an available file path by appending a number if needed.
+  Example: "file.txt" -> "file_1.txt", "file_2.txt", etc.
+  """
+  base, ext = os.path.splitext(filepath)
+  counter = 1
+  new_filepath = filepath
+
+  while os.path.exists(new_filepath):
+      new_filepath = f"{base}_{counter}{ext}"
+      counter += 1
+
+  return new_filepath
+
 
 def init_plotting():
   fig, ax = plt.subplots(1, 1, figsize=(3.9, 2.2), dpi=600)
@@ -31,7 +48,7 @@ def plot_1d_axial_density(fig, ax, name_list = ["psi_1d", "psi_1d_2"], color="bl
 
     ax.plot(l_x/dl, field, lw=1, linestyle="--", color=color)
 
-    ax.set_xlabel(r"$x$")
+    ax.set_xlabel(r"$z$")
     ax.set_ylabel(r"$|f|^2$")
     plt.tight_layout()
 
@@ -39,12 +56,14 @@ def plot_1d_axial_density(fig, ax, name_list = ["psi_1d", "psi_1d_2"], color="bl
     # output_file = f"media/axial_density.png"
     # plt.savefig(output_file, dpi=900)
     # print(f"Saved 1D as '{output_file}'.")
-    return fig, ax
+  return fig, ax
 
 
 def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-"):
   # Load the 3D array from the HDF5 file
-  for name in name_list:
+  # starting from the color specified as a parameter, build a list of colors
+  colors = ["blue", "red"]
+  for idx, name in enumerate(name_list):
     file_name = "results/"+name+".h5"
     field_key = "psi_squared"
     l_x_key = "l_x"
@@ -68,12 +87,18 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
     dz = l_z[1]-l_z[0]
     # Calculate projections
     x = np.sum(field, axis=(1, 2)) * dy * dz
+    l_x_upsampled = np.linspace(l_x[0], l_x[-1], 2000)
+    x_resampled = interp1d(l_x, x, "cubic")(l_x_upsampled)
     print(np.abs(np.sum(x) * dx - 1.0) < 1e-4)
     vmin, vmax = np.nanmin(x), np.nanmax(x)
     vmax = min(2.0, abs(vmax))
 
-    ax.plot(l_x/dl, x, lw=1, linestyle=ls, color=color)
-    ax.set_xlabel(r"$x \ [d_L]$")
+    # ax.plot(l_x/dl, x, lw=1, linestyle=ls, color=colors[idx])
+    ax.plot(l_x_upsampled/dl, x_resampled, 
+            lw=1, 
+            linestyle=ls, 
+            color=colors[idx] )
+    ax.set_xlabel(r"$z \ [d_L]$")
     ax.set_ylabel(r"$|f|^2$")
     plt.tight_layout()
 
@@ -81,9 +106,9 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
     # output_file = f"media/axial_density.png"
     # plt.savefig(output_file, dpi=900)
     # print(f"Saved 3D projections as '{output_file}'.")
-    return fig, ax
-  
- 
+  return fig, ax
+
+
 def plot_3d_radial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-"):
     # Load the 3D array from the HDF5 file
   for name in name_list:

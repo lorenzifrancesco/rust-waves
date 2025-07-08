@@ -10,7 +10,7 @@ from scipy.signal import find_peaks
 import numpy as np
 from launch.rw import write_from_experiment
 import re
-
+from plot_axial_density import get_available_filename
 
 EXPERIMENT_FILE = "input/experiment_fig3c.toml"
 
@@ -24,15 +24,14 @@ def get_axial_density_csv(filename):
     df = df.sort_values(by='x')
     x = df.iloc[:, 0]
     y_values = df.iloc[:, 1:]
-    window_size = 3
+    window_size = 5
     y_smoothed = y_values.rolling(window=window_size, center=True).mean()
     return np.array(x), np.array(y_smoothed).ravel()
 
 
 def after_run(l,
-              filename, cf):
-    name = re.search(r"dyn_(.+?)\.h5", filename).group(1)
-    print(">> after_run: ", name)
+              filename_list, cf):
+    name_list = [re.search(r"dyn_(.+?)\.h5", ff).group(1) for ff in filename_list]
     fig, ax = plot_axial_density.init_plotting()
     if l.dimension == 1:
         # print(">> plotting heatmap")
@@ -40,12 +39,10 @@ def after_run(l,
         #     filename=filename)
         print(">> plotting axial density")
         plot_axial_density.plot_1d_axial_density(
-            fig, ax, name_list=[name],)
-        projections_evolution.plot_heatmap_h5(filename=filename, experiment_file=EXPERIMENT_FILE)
-
+            fig, ax, name_list=name_list)
     else:
         fig, ax = plot_axial_density.plot_3d_axial_density(
-            fig, ax, name_list=[name],)
+            fig, ax, name_list=name_list,)
         # projections_evolution.plot_heatmap_h5_3d(
             # filename=filename, experiment_file=EXPERIMENT_FILE)
         # p3d_snap_projections.movie(name="dyn_test_3d")
@@ -56,8 +53,8 @@ def after_run(l,
     line = ax.get_lines()[0]
     y = line.get_ydata()
     y_max = max(y)
-    print("y_max: ", y_max)
     finals = ["3c-multisoliton", "3c-disperse"]
+    colors = ["blue", "red"]
     for idx, final in enumerate(finals):
         x, y = get_axial_density_csv("input/"+final+".csv")
         valid = ~np.isnan(y)
@@ -68,23 +65,27 @@ def after_run(l,
             peak_index = peaks[np.argmax(y[peaks])]
             peak_x = x[peak_index]
             y_floor = (y[0]+y[-1])/2
-            peak_y = y[peak_index] - y_floor
+            peak_y = y[peak_index]
             level = y_max
+            print(level)
         x_shift = -peak_x
         x = x + x_shift
-        y = (y-y_floor) / peak_y * level
+        y = (y-y_floor) / (peak_y-y_floor) * level
         ax.plot(x, y,
-                label="3c-multisoliton", ls="-")
+                label="3c-multisoliton", ls=":", lw=0.9, color=colors[idx])
     plt.xlim([-6, 6])
-    plt.savefig("media/axial-test.pdf", dpi=900)
-    print("Saved media/axial-test.pdf")
+    plot_name = "media/axial-density.pdf"
+    pn = get_available_filename(plot_name)
+    plt.savefig(pn, dpi=900)
+    print("Saved "+pn)
 
-    if l.dimension == 1:
-        projections_volumetric.plot_1d_projections(
-            filename=filename, experiment_file=EXPERIMENT_FILE)
-    else:
-        projections_volumetric.plot_3d_projections(
-            filename=filename, experiment_file=EXPERIMENT_FILE)
+    for filename in filename_list:
+        if l.dimension == 1:
+            projections_evolution.plot_heatmap(
+                filename=filename, experiment_file=EXPERIMENT_FILE)
+        else:
+            projections_evolution.plot_heatmap_h5_3d(
+                filename=filename, experiment_file=EXPERIMENT_FILE)
 
 
 def continuously_update_screen():
@@ -98,7 +99,7 @@ def continuously_update_screen():
                 write_from_experiment(
                     input_filename=EXPERIMENT_FILE,
                     output_filename="input/_params.toml",
-                    title="fig3c",
+                    title="fig3c-blue",
                     load_gs=True,
                     t_imaginary=None,
                     free_x=True,
@@ -116,9 +117,13 @@ def continuously_update_screen():
                 # print("Dimension: ", l.dimension)
                 l.compile("release")
 
-                l.run()
+                # l.run()
 
-                after_run(l, filename, l.cf)
+                filename_red = "results/dyn_fig3c-red_"+str(int(l.dimension))+"d.h5"
+                filename_blue = "results/dyn_fig3c-blue_"+str(int(l.dimension))+"d.h5"
+                # assert(filename in [filename_red, filename_blue])
+                # after_run(l, filename_red, l.cf)
+                after_run(l, [filename_blue, filename_red], l.cf)
 
             time.sleep(0.1)
 

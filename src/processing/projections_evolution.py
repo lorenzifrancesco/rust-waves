@@ -8,6 +8,7 @@ import toml
 from matplotlib.colorbar import Colorbar
 import re
 import pandas as pd
+from plot_axial_density import get_available_filename
 
 plt.rcParams.update({
     "text.usetex": True,  # Use LaTeX for text rendering
@@ -69,7 +70,7 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1, experiment_file = "input/exp
   ax_heatmap.set_xlim([0.0, t.max()])
   # if x_zoom is not None:
   #   ax_heatmap.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
-  ax_heatmap.set_ylabel(r'$z \quad [\mu m]$')
+  ax_heatmap.set_ylabel(r'$z$ [\textmu m]')
   ax_heatmap.axhline(+d/2*1e6, color='w', linestyle='-', lw=0.3)
   ax_heatmap.axhline(-d/2*1e6, color='w', linestyle='-', lw=0.3)
   ax_heatmap.axvline(t.max() /(2 * np.pi))
@@ -127,7 +128,7 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1, experiment_file = "input/exp
   # plt.axhline(+5, color="w", lw=0.4)
   # plt.axhline(-5, color="w", lw=0.4)
   # plt.xlabel(r"$t \; [\omega_\perp]$")
-  # plt.ylabel(r"$x \; [d_L]$")
+  # plt.ylabel(r"$z \; [d_L]$")
   # plt.axhline(+1, color="w", lw=0.3)
   # plt.axhline(-1, color="w", lw=0.3)
   # plt.axvline(t.max()/(2 * np.pi), color="w", lw=0.3)
@@ -177,9 +178,9 @@ def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.
   x_min = -x_max
   space_points = len(l)
   time_points = len(t)
-  
   d = par["physics"]["dl"] * l_perp
-
+  dz = (l[1]-l[0])
+  atom_number = np.sum(psi2_values, axis=0) * dz * exp_par["n_atoms"]
   # fig, axes = plt.subplots(1, 1, figsize=(3, 2.2), dpi=600)
   # # aspect = (t.max() - t.min()) / (l.max() - l.min())
 
@@ -193,7 +194,7 @@ def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.
   # )
   # plt.colorbar(label=r"$|f|^2$")
   # plt.xlabel(r"$t$")
-  # plt.ylabel(r"$x$")
+  # plt.ylabel(r"$z$")
   # plt.tight_layout()
   # plt.savefig(f"media/idx-{i}_heatmap.png", dpi=600)
   # print(f"Saved 3D heatmap as 'media/idx-{i}_heatmap.png'.")
@@ -210,14 +211,12 @@ def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.
   # print(f"l_perp = {l_perp}, dl = {(l[1]-l[0])*l_perp}")
   df = pd.DataFrame(psi2_values)
   df.to_csv("results/widths/"+str(i)+".csv", index=False, header=False)
-  
-  psi2_values *= l_perp
   ax_heatmap.imshow(
       psi2_values,
       cmap="nipy_spectral",
       # cbar=False,  # Disable the default colorbar
       # ax=ax_heatmap, 
-      interpolation="none",
+      interpolation="bicubic",
   )
   x_zoom = 10
   lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
@@ -225,7 +224,7 @@ def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.
   ax_heatmap.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
   ax_heatmap.set_ylim(bottom=lim_bottom, top=lim_top)
   ax_heatmap.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
-  ax_heatmap.set_ylabel(r'$x \quad [\mu m]$')
+  ax_heatmap.set_ylabel(r'$z$ [\textmu m]')
   ax_heatmap.axhline((x_max+d/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=1)
   ax_heatmap.axhline((x_max-d/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=1)
   # ax_heatmap.set_aspect(t_max / (2*x_max))
@@ -235,22 +234,36 @@ def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.
   norm = plt.Normalize(vmin=np.min(psi2_values), vmax=np.max(psi2_values))
   sm = plt.cm.ScalarMappable(cmap="nipy_spectral", norm=norm)
   cbar = Colorbar(cbar_ax, sm, orientation='vertical')
-  cbar.set_label(r'$n(x) \; [\mathrm{atom fraction} /\mathrm{m}^3]$', rotation=90)
+  cbar.set_label(r'$n(z) \; [\mathrm{atoms} /\mathrm{m}]$', rotation=90)
 
   # Line plot for atom number
-  dz = (l[1]-l[0])
-  atom_number = np.sum(psi2_values/l_perp, axis=0) * dz * l_perp
+  t_experiment = np.array([0.0005972409705988849,
+  0.05041122049188423,
+  0.10030948539821552,
+  0.15022026141638956,
+  0.20013301287327562,
+  0.2497481315642182]) / t_perp
+  atom_number_experiment = np.array([
+  2876.8182267145166,
+  2169.5453198564514,
+  2009.2845619464656,
+  1930.2209198959604,
+  1863.9778750864255,
+  1866.098179303987])
   ax_lineplot = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
-  ax_lineplot.plot(atom_number, color='blue', lw=0.2)
+  time_fullscale = time_points - 1
+  time_data = t[-1]
+  ax_lineplot.plot(t * time_fullscale/time_data, atom_number, color='blue', lw=0.2)
+  ax_lineplot.scatter(t_experiment * time_fullscale/time_data, atom_number_experiment, color='red', s=10, label="Experiment", zorder=3)
   ax_lineplot.set_xlabel(r'$t \quad [\mathrm{ms}]$')
-  ax_lineplot.set_ylabel(r'$N(t)/N_0$')
-  ax_lineplot.set_xticks([0, time_points - 1])  # Positions: start and end of time
-  ax_lineplot.set_xticklabels([f"{0.0:.1f}", f"{t_perp*t[-1]:.1f}"])  # Labels: min and max time
+  ax_lineplot.set_ylabel(r'$N(t)$')
+  ax_lineplot.set_xticks([0, time_fullscale])  # Positions: start and end of time
+  ax_lineplot.set_xticklabels([f"{0.0:.1f}", f"{1e3*t_perp*t[-1]:.0f}"])  # Labels: min and max time
   ax_heatmap.get_xaxis().set_visible(False)
   # ax_lineplot.text(f'{atom_number[:-1]}')
   ax_lineplot.text(
-    0.95, 0.05,  # Position of text (relative to axes, [x, y] from bottom-left corner)
-    f'$N(t_f)/N_0 = {atom_number[-1]:.2f}$',  # Format the final value
+    0.95, 0.3,  # Position of text (relative to axes, [x, y] from bottom-left corner)
+    f'$N(t_f) = {atom_number[-1]:.0f}$',  # Format the final value
     transform=ax_lineplot.transAxes,  # Use axes coordinates
     color='black', fontsize=8, ha='right', va='bottom'
   )
@@ -258,7 +271,7 @@ def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.
   # ax_lineplot.legend(loc="upper right")
   fig.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.15)
 
-  heatmap_filename = "media/3d_heatmap_idx-"+str(i)+".png"
+  heatmap_filename = "media/3d_heatmap_idx-"+str(i)+".pdf"
   plt.savefig(heatmap_filename, dpi=300, pad_inches=0.1)
   plt.close()
   print(f"Heatmap saved as {heatmap_filename}")
