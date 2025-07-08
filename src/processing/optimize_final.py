@@ -1,8 +1,8 @@
 import launch.rust_launcher as rust_launcher
 import os
 import time
-import p1d_dyn_heatmap
-import p3d_snap_projections
+import projections_evolution
+import projections_volumetric
 import plot_axial_density
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -59,7 +59,7 @@ def after_run(l,
         plt.savefig("media/axial-test.pdf", dpi=900)
         print("Saved media/axial-test.pdf")
     else:
-        p1d_dyn_heatmap.plot_heatmap_h5_3d(
+        projections_evolution.plot_heatmap_h5_3d(
             filename=filename)
         # p3d_snap_projections.movie(name="dyn_test_3d")
         # fig, ax = plot_axial_density.init_plotting()

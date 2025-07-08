@@ -6,8 +6,8 @@ from scipy.constants import physical_constants
 from plot_widths import width_from_wavefunction, apply_noise_to_widths, plot_widths
 import os
 import pandas
-from p1d_dyn_heatmap import *
-from p3d_snap_projections import *
+from projections_evolution import *
+from projections_volumetric import *
 from scipy.optimize import bisect
 import time
 from scipy.interpolate import interp1d

@@ -1,8 +1,8 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import time
-import p1d_dyn_heatmap
-import p3d_snap_projections
+import projections_evolution
+import projections_volumetric
 import launch.rust_launcher as rust_launcher
 
 
@@ -12,7 +12,7 @@ def exec(sim):
         # p1d_dyn_heatmap.plot_heatmap()
         sim.compile("debug")
         sim.run(realtime=True)
-        p1d_dyn_heatmap.plot_first_last()
+        projections_evolution.plot_first_last()
     except Exception as e:
         print(e)
 

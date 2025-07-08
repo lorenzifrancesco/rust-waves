@@ -5,8 +5,8 @@ from launch.rw import Params, write_from_experiment
 from scipy.constants import physical_constants
 from plot_widths import width_from_wavefunction, apply_noise_to_widths, plot_widths, plot_widths_cumulative
 import os
-from p1d_dyn_heatmap import *
-from p3d_snap_projections import *
+from projections_evolution import *
+from projections_volumetric import *
 import time
 
 data_widths = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width", "number"])
