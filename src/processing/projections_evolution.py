@@ -159,7 +159,7 @@ def load_hdf5_data_single_axis(filename):
   return t, l_x, frames, np.array(numbers)
 
 
-def plot_heatmap_h5_3d(filename="1d", i=-1):
+def plot_heatmap_h5_3d(filename="3d", i=-1):
   par = toml.load("input/_params.toml")
   params = par["numerics"]
   t, l, frames, atom_number = load_hdf5_data_single_axis(filename) 
@@ -168,7 +168,8 @@ def plot_heatmap_h5_3d(filename="1d", i=-1):
   extent = [t.min(), t.max(), l.min(), l.max()]
   # print(t)
   # print(len(t))
-  psi2_values = np.array([f for f in frames]).reshape(len(t), len(l)).T  # Load psi_squared dataset
+  print(frames)
+  psi2_values = np.array([f for f in frames]).reshape(len(t), len(l)).T
   exp_par = toml.load("input/experiment.toml")
   l_perp = np.sqrt(hbar / (m * exp_par["omega_perp"]))
   t_perp = 1 / exp_par["omega_perp"]
