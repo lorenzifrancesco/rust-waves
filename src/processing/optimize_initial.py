@@ -49,7 +49,6 @@ def after_run(l,
     valid = ~np.isnan(y)
     x = x[valid]
     y = y[valid]
-    print(y)
     peaks, _ = find_peaks(y)
     peak_index = peaks[np.argmax(y[peaks])]
     peak_x = x[peak_index]
@@ -72,12 +71,12 @@ def continuously_update_screen():
     try:
         last_mtime = 0
         while True:
-            current_mtime = os.path.getmtime('input/experiment_pre_quench.toml')
+            current_mtime = os.path.getmtime('input/experiment_pre_quench_fig3c.toml')
             if current_mtime != last_mtime:
                 last_mtime = current_mtime
                 os.system('clear')
                 write_from_experiment(
-                    input_filename="input/experiment_pre_quench.toml",
+                    input_filename="input/experiment_pre_quench_fig3c.toml",
                     output_filename="input/_params.toml",
                     title="pre-quench",
                     load_gs=False,
@@ -97,7 +96,7 @@ def continuously_update_screen():
                 # print("Dimension: ", l.dimension)
                 l.compile("release")
 
-                # l.run()
+                l.run()
 
                 after_run(l, filename, l.cf)
 

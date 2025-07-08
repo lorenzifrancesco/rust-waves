@@ -66,7 +66,6 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
     dx = l_x[1]-l_x[0] 
     dy = l_y[1]-l_y[0] 
     dz = l_z[1]-l_z[0]
-
     # Calculate projections
     x = np.sum(field, axis=(1, 2)) * dy * dz
     print(np.abs(np.sum(x) * dx - 1.0) < 1e-4)

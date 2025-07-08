@@ -19,7 +19,7 @@ plt.rcParams.update({
 hbar = 1.0545718e-34
 m = 2.21e-25
 
-def plot_heatmap_h5(filename="results/1d.h5", i=-1):
+def plot_heatmap_h5(filename="results/1d.h5", i=-1, experiment_file = "input/experiment.toml"):
   with h5py.File(filename, "r") as f:
       l = np.array(f["l"])  # Load l (spatial coordinate)
       t = np.array(f["t"])  # Load t (time coordinate)
@@ -30,7 +30,7 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1):
   dl = par["physics"]["dl"]
   # extent = [t.min(), t.max(), l.min(), l.max()]
   extent = [t.min(), t.max(), l.min(), l.max()]
-  exp_par = toml.load("input/experiment.toml")
+  exp_par = toml.load(experiment_file)
   
   l_perp = np.sqrt(hbar / (m * exp_par["omega_perp"]))
   print("l_perp ", l_perp)
@@ -90,7 +90,7 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1):
   # ax2 = fig.add_axes(ax_heatmap.get_position(), sharex=ax_hea)
   ax_lineplot.plot(atom_number, color='blue')
   # ax_lineplot.set_xlabel(r'$t \quad [\mathrm{ms}]$')
-  ax_lineplot.set_xlabel(r'$t \quad [\omega_\perp]$')
+  ax_lineplot.set_xlabel(r'$t \quad [\omega_\perp^{-1}]$')
   ax_lineplot.set_ylabel(r'$N(t)/N_0$')
   ax_lineplot.set_xticks([0, t.max()])
   ax_lineplot.set_xticklabels([f"{0.0:.1f}", fr"{{{t.max():3.2f}}}"])  # Labels: min and max time
@@ -159,7 +159,7 @@ def load_hdf5_data_single_axis(filename):
   return t, l_x, frames, np.array(numbers)
 
 
-def plot_heatmap_h5_3d(filename="3d", i=-1):
+def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.toml"):
   par = toml.load("input/_params.toml")
   params = par["numerics"]
   t, l, frames, atom_number = load_hdf5_data_single_axis(filename) 
@@ -168,9 +168,8 @@ def plot_heatmap_h5_3d(filename="3d", i=-1):
   extent = [t.min(), t.max(), l.min(), l.max()]
   # print(t)
   # print(len(t))
-  print(frames)
   psi2_values = np.array([f for f in frames]).reshape(len(t), len(l)).T
-  exp_par = toml.load("input/experiment.toml")
+  exp_par = toml.load(experiment_file)
   l_perp = np.sqrt(hbar / (m * exp_par["omega_perp"]))
   t_perp = 1 / exp_par["omega_perp"]
   x_min = l.min() * l_perp * 1e6
@@ -203,13 +202,16 @@ def plot_heatmap_h5_3d(filename="3d", i=-1):
 
   ax_heatmap = fig.add_subplot(gs[0, 0])  
   
+  # saving for export
+  # FIXME 
+  print("WARN: check the normalization used")
   psi2_values /= l_perp
-  psi2_values *= 1700
+  psi2_values *= exp_par["n_atoms"]
   # print(f"l_perp = {l_perp}, dl = {(l[1]-l[0])*l_perp}")
   df = pd.DataFrame(psi2_values)
   df.to_csv("results/widths/"+str(i)+".csv", index=False, header=False)
   
-  psi2_values *= l_perp / 1700
+  psi2_values *= l_perp
   ax_heatmap.imshow(
       psi2_values,
       cmap="nipy_spectral",
@@ -237,7 +239,7 @@ def plot_heatmap_h5_3d(filename="3d", i=-1):
 
   # Line plot for atom number
   dz = (l[1]-l[0])
-  atom_number = np.sum(psi2_values*1700/l_perp, axis=0) * dz * l_perp
+  atom_number = np.sum(psi2_values/l_perp, axis=0) * dz * l_perp
   ax_lineplot = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
   ax_lineplot.plot(atom_number, color='blue', lw=0.2)
   ax_lineplot.set_xlabel(r'$t \quad [\mathrm{ms}]$')
@@ -260,6 +262,7 @@ def plot_heatmap_h5_3d(filename="3d", i=-1):
   plt.savefig(heatmap_filename, dpi=300, pad_inches=0.1)
   plt.close()
   print(f"Heatmap saved as {heatmap_filename}")
+
 
 def plot_heatmap(filename):
     # Initialize lists to store the data
