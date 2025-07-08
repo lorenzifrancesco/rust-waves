@@ -69,7 +69,7 @@ pub fn propagate_1d(
     // warn!("we are overwriting the first element in saved_psi");
     ns = normalization_factor_1d(psi0);
     assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
-    let mut save_interval = (n_t as f64 / params.options.n_saves as f64).round() as u32;
+    let mut save_interval = (n_t as f64 / params.options.n_saves as f64).floor() as u32;
 
     if save_interval == 0 {
         save_interval = 1;
@@ -239,6 +239,7 @@ pub fn propagate_3d(
             cnt += 1;
         }
     }
+    saved_psi.movie[params.options.n_saves - 1] = Projections3D::new(psi0);
     let t_elapsed = t_start.elapsed();
     ns = normalization_factor_3d(&psi0);
     if (ns - 1.0).abs() < 1e-6 {}
