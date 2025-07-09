@@ -7,6 +7,7 @@ from scipy.interpolate import interp1d
 from projections_volumetric import load_hdf5_data
 import pandas as pd
 import os
+from optimize_initial import compute_atom_number_harmonium
 
 def get_available_filename(filepath):
   """
@@ -51,12 +52,13 @@ def plot_1d_axial_density(fig, ax, name_list = ["psi_1d", "psi_1d_2"], color="bl
     ax.set_xlabel(r"$z$")
     ax.set_ylabel(r"$|f|^2$")
     plt.tight_layout()
-
+    n_atoms_harmonium = compute_atom_number_harmonium(l_x, field)
     # Save the plot as a PNG file
     # output_file = f"media/axial_density.png"
     # plt.savefig(output_file, dpi=900)
     # print(f"Saved 1D as '{output_file}'.")
-  return fig, ax
+
+  return fig, ax, n_atoms_harmonium
 
 
 def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-"):

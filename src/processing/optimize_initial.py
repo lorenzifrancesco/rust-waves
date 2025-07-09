@@ -9,6 +9,20 @@ from scipy.signal import find_peaks
 import numpy as np
 from launch.rw import write_from_experiment
 import re
+import toml
+
+def compute_atom_number_harmonium(x, n):
+    params = toml.load("input/_params.toml")
+    min_idx = params["physics"]["dl"] * -4
+    max_idx = -min_idx
+    dz = x[1]- x[0]
+    n_atoms = np.zeros(9)
+    for idx, site in enumerate(range(-4, 5)):
+        lower_end = (site - 0.5) * params["physics"]["dl"]
+        upper_end = (site + 0.5) * params["physics"]["dl"]
+        mask = (x >= lower_end) & (x <= upper_end)
+        n_atoms[idx] = np.sum(dz * n[mask])
+    return n_atoms
 
 """
 x in lattice sites,
@@ -34,7 +48,7 @@ def after_run(l,
         # print(">> plotting heatmap")
         # p1d_dyn_heatmap.plot_heatmap_h5(
         #     filename=filename)
-        plot_axial_density.plot_1d_axial_density(fig, ax, name_list=[name],)
+        _, _, n_atoms_harmonium_sim = plot_axial_density.plot_1d_axial_density(fig, ax, name_list=[name],)
     else:
         plot_axial_density.plot_3d_axial_density(fig, ax, name_list=[name], color="blue", ls="-")
         # p3d_snap_projections.movie(name="dyn_test_3d")
@@ -65,7 +79,17 @@ def after_run(l,
     filename = "input/3c-multisoliton.csv"
     plt.savefig("media/axial-test.pdf", dpi=900)
     print("Saved media/axial-test.pdf")
-
+    
+    n_atoms_harmonium_exp = compute_atom_number_harmonium(x, y)
+    n_tot_1 = np.sum(n_atoms_harmonium_exp)
+    n_tot_2 = np.sum(n_atoms_harmonium_sim)
+    n_atoms_harmonium_exp = n_atoms_harmonium_exp / n_tot_1 * n_tot_2
+    plt.clf()
+    plt.plot(n_atoms_harmonium_exp, label="3c-multisoliton", marker = "x", color="gray", ls="--", lw=1.3
+             )
+    plt.plot(n_atoms_harmonium_sim, label="harmonium simulation",marker ="x", color="blue", ls="-", lw=1.3)
+    plt.savefig("media/harmonium.png", dpi=900)
+    print("Saved media/harmonium.png")
 
 def continuously_update_screen():
     try:
@@ -96,7 +120,7 @@ def continuously_update_screen():
                 # print("Dimension: ", l.dimension)
                 l.compile("release")
 
-                # l.run()
+                l.run()
 
                 after_run(l, filename, l.cf)
 
