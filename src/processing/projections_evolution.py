@@ -9,6 +9,7 @@ from matplotlib.colorbar import Colorbar
 import re
 import pandas as pd
 from plot_axial_density import get_available_filename
+import pandas as pd
 
 plt.rcParams.update({
     "text.usetex": True,  # Use LaTeX for text rendering
@@ -181,6 +182,12 @@ def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.
   d = par["physics"]["dl"] * l_perp
   dz = (l[1]-l[0])
   atom_number = np.sum(psi2_values, axis=0) * dz * exp_par["n_atoms"]
+  df = pd.DataFrame({
+    't [s]': t * t_perp,
+    'n_atoms []': atom_number
+  })
+  name = re.search(r"dyn_(.+?)\.h5", filename).group(1)
+  df.to_csv("./results/export/atom_number_"+name+".csv", index=False)
   # fig, axes = plt.subplots(1, 1, figsize=(3, 2.2), dpi=600)
   # # aspect = (t.max() - t.min()) / (l.max() - l.min())
 

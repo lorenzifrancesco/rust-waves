@@ -95,7 +95,8 @@ def write_from_experiment(
   kl = None,
   free_x = False, 
   t_imaginary = 8.0,
-  n_atoms = None):
+  n_atoms = None, 
+  w0 = 1.0):
     ex = toml.load(input_filename)
     
     # scales (SI)
@@ -138,12 +139,13 @@ def write_from_experiment(
       p.w = -1.0
       p.g5 = float(g5) 
       t = ex["t_f"] / t_perp
-      p.t =float(t)
+      p.t = float(t)
     else: 
       p.im_t = True
       p.t = t_imaginary
       p.g5 = 0.0
-      p.w = 0.6 # with this number the NPSE has a good initial state for all the theoretically noncollapsing evolution. 
+      print("WARN: setting by hand a good initial width. Beware of NPSE")
+      p.w = w0 # with this number the NPSE has a good initial state for all the theoretically noncollapsing evolution. 
     p.write(output_filename)
     return
 

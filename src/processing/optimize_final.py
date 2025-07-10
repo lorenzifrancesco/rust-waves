@@ -11,9 +11,9 @@ import numpy as np
 from launch.rw import write_from_experiment
 import re
 from plot_axial_density import get_available_filename
+import pandas as pd
 
 EXPERIMENT_FILE = "input/experiment_fig3c.toml"
-
 
 """
 x in lattice sites,
@@ -34,21 +34,11 @@ def after_run(l,
     name_list = [re.search(r"dyn_(.+?)\.h5", ff).group(1) for ff in filename_list]
     fig, ax = plot_axial_density.init_plotting()
     if l.dimension == 1:
-        # print(">> plotting heatmap")
-        # p1d_dyn_heatmap.plot_heatmap_h5(
-        #     filename=filename)
-        print(">> plotting axial density")
         plot_axial_density.plot_1d_axial_density(
             fig, ax, name_list=name_list)
     else:
         fig, ax = plot_axial_density.plot_3d_axial_density(
             fig, ax, name_list=name_list,)
-        # projections_evolution.plot_heatmap_h5_3d(
-            # filename=filename, experiment_file=EXPERIMENT_FILE)
-        # p3d_snap_projections.movie(name="dyn_test_3d")
-        # fig, ax = plot_axial_density.init_plotting()
-        # plot_axial_density.plot_3d_axial_density(fig, ax, name_list=["test_3d"], color="blue", ls="-")
-        # plt.savefig("media/test.pdf", dpi=900)
 
     line = ax.get_lines()[0]
     y = line.get_ydata()
@@ -73,6 +63,11 @@ def after_run(l,
         y = (y-y_floor) / (peak_y-y_floor) * level
         ax.plot(x, y,
                 label="3c-multisoliton", ls=":", lw=0.9, color=colors[idx])
+        df = pd.DataFrame({
+        'z [dl]':  x,
+        'n [AU]' : y
+        })
+        df.to_csv("results/export/"+final+".csv", index=False)
     plt.xlim([-6, 6])
     plot_name = "media/axial-density.pdf"
     pn = get_available_filename(plot_name)
@@ -81,7 +76,7 @@ def after_run(l,
 
     for filename in filename_list:
         if l.dimension == 1:
-            projections_evolution.plot_heatmap(
+            projections_evolution.plot_heatmap_h5(
                 filename=filename, experiment_file=EXPERIMENT_FILE)
         else:
             projections_evolution.plot_heatmap_h5_3d(
@@ -119,11 +114,12 @@ def continuously_update_screen():
 
                 # l.run()
 
-                filename_red = "results/dyn_fig3c-red_"+str(int(l.dimension))+"d.h5"
+                filename_red =  "results/dyn_fig3c-red_"+str(int(l.dimension))+"d.h5"
                 filename_blue = "results/dyn_fig3c-blue_"+str(int(l.dimension))+"d.h5"
                 # assert(filename in [filename_red, filename_blue])
                 # after_run(l, filename_red, l.cf)
                 after_run(l, [filename_blue, filename_red], l.cf)
+                # after_run(l, [filename], l.cf)
 
             time.sleep(0.1)
 

@@ -36,20 +36,20 @@ def after_run(l,
         plot_axial_density.plot_1d_axial_density(
             fig, ax, name_list=["3c_1d"],)
 
-        x, y = get_axial_density_csv("input/3c-multisoliton.csv")
-        peaks, _ = find_peaks(y)
-        peak_index = peaks[np.argmax(y[peaks])]
-        peak_x = x[peak_index]
-        peak_y = y[peak_index]
-        level = 0.35
-        yfix = level
-        x_shift = -peak_x
-        x = x + x_shift
-        y = y / peak_y * level
-        y_floor = (y[0]+y[-1])/2 - 0.01
-        y = y-y_floor
-        ax.plot(x * cf["physics"]["dl"], y,
-                label="3c-multisoliton", color="red", ls="-")
+        # x, y = get_axial_density_csv("input/3c-multisoliton.csv")
+        # peaks, _ = find_peaks(y)
+        # peak_index = peaks[np.argmax(y[peaks])]
+        # peak_x = x[peak_index]
+        # peak_y = y[peak_index]
+        # level = 0.35
+        # yfix = level
+        # x_shift = -peak_x
+        # x = x + x_shift
+        # y = y / peak_y * level
+        # y_floor = (y[0]+y[-1])/2 - 0.01
+        # y = y-y_floor
+        # ax.plot(x * cf["physics"]["dl"], y,
+        #         label="3c-multisoliton", color="red", ls="-")
         plt.xlim([-6, 6])
         filename = "input/3c-multisoliton.csv"
         plt.savefig("media/axial-test.pdf", dpi=900)
@@ -81,10 +81,12 @@ def continuously_update_screen():
                 # print("Dimension: ", l.dimension)
                 assert (l.dimension == 1)
                 l.compile("release")
-
-                l.run()
-
-                after_run(l, filename, l.cf)
+                try:
+                    l.run()
+                    after_run(l, filename, l.cf)
+                except Exception as e:
+                    print(f"Error during simulation: {e}")
+                    continue
 
             time.sleep(0.1)
 

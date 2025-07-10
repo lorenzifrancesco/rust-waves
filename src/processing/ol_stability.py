@@ -25,7 +25,8 @@ def collapse_or_not(g, v0):
                       load_gs = False, 
                       v_0 = v0, 
                       free_x=True, 
-                      t_imaginary = 8.0)
+                      t_imaginary = 50.0,
+                      w0 = 2.0)
   l = Simulation(input_params="input/_params.toml",
                 output_file="results/",
                 rust="./target/release/rust_waves")
@@ -66,6 +67,7 @@ print(f"e_recoil / e_perp = {e_recoil/e_perp}")
 v0s = [5.0]
 v0s = np.linspace(0.0, 3, 5)
 v0s = np.linspace(0.0, v0_max, 8)
+v0s = [0.0]
 
 if default.npse == True and default.dimension == 1:
   name = f"results/ol_stability_npse.csv"
@@ -80,13 +82,13 @@ if ~os.path.exists(name) or recompute:
   for iv, v0 in enumerate(v0s):
     try:
       gcs[iv] = bisect(collapse_or_not, 0.0, -1.5, 
-                    args=(v0),
-                    maxiter=100, 
-                    xtol=1e-2)
+                    args=(0.0),
+                    maxiter=10000,
+                    xtol=1e-3)
     except ValueError as e:
       print(f">>> Error: {e}")
       gcs[iv] = np.nan
-
+  print("collapse levels: gc = ", gcs)
   print("Saving the csv file...")
   df = pd.DataFrame({
       "v0": v0s,
@@ -95,6 +97,7 @@ if ~os.path.exists(name) or recompute:
 
   df.to_csv(name, index=False)
 
+exit()
 print("Plotting...")
 
 x_var = np.array([-1.5359746434231374, -1.481122543380501, -1.3928290442211617, -1.3279694627012153, 

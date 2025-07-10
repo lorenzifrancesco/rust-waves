@@ -48,7 +48,11 @@ def plot_1d_axial_density(fig, ax, name_list = ["psi_1d", "psi_1d_2"], color="bl
         print(f"Loaded dataset with shape: {field.shape}")
 
     ax.plot(l_x/dl, field, lw=1, linestyle="--", color=color)
-
+    df = pd.DataFrame({
+      'z [dl]':  l_x/dl,
+      'n [AU]' : field
+    })
+    df.to_csv("results/export/"+name+".csv", index=False)
     ax.set_xlabel(r"$z$")
     ax.set_ylabel(r"$|f|^2$")
     plt.tight_layout()
@@ -90,6 +94,7 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
     # Calculate projections
     x = np.sum(field, axis=(1, 2)) * dy * dz
     l_x_upsampled = np.linspace(l_x[0], l_x[-1], 2000)
+    dz_upsampled = l_x_upsampled[1]-l_x_upsampled[0]
     x_resampled = interp1d(l_x, x, "cubic")(l_x_upsampled)
     print(np.abs(np.sum(x) * dx - 1.0) < 1e-4)
     vmin, vmax = np.nanmin(x), np.nanmax(x)
@@ -103,7 +108,13 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
     ax.set_xlabel(r"$z \ [d_L]$")
     ax.set_ylabel(r"$|f|^2$")
     plt.tight_layout()
-
+    
+    df = pd.DataFrame({
+      'z [dl]':  l_x_upsampled/dl,
+      'n [AU]' : x_resampled
+    })
+    df.to_csv("results/export/"+name+".csv", index=False)
+    print("NORMALIZATION: ", np.sum(x_resampled) * dz_upsampled)
     # Save the plot as a PNG file
     # output_file = f"media/axial_density.png"
     # plt.savefig(output_file, dpi=900)
@@ -122,7 +133,7 @@ def plot_3d_radial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-"
 
     par = toml.load("input/_params.toml")    
     params = par["numerics"]
-    dl =par["physics"]["dl"]
+    dl = par["physics"]["dl"]
     
     with h5py.File(file_name, "r") as file:
         assert l_x_key in file, f"Key 'l_x' is missing, this does not seem to be a 3D dataset."
