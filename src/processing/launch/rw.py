@@ -96,7 +96,9 @@ def write_from_experiment(
   free_x = False, 
   t_imaginary = 8.0,
   n_atoms = None, 
-  w0 = 1.0):
+  w0 = 1.0,
+  l_3 = None,
+  dimension = None):
     ex = toml.load(input_filename)
     
     # scales (SI)
@@ -123,12 +125,16 @@ def write_from_experiment(
     if g == None:
       g = 2 * a0 * a_s * (n_atoms-1) / l_perp
       
-    # raise("fix the following")
-    g5 = ex["l_3"] / l_perp**6 * t_perp * n_atoms**2 / 2
+    if l_3 is None:
+      l_3 = ex["l_3"]
+    g5 = l_3 / l_perp**6 * t_perp * n_atoms**2 / 2
     if v_0 == None:
       v_0 = ex["v_0"] * e_recoil / e_perp
     p = Params.read("input/_default.toml")
     assert(p.title == "default")
+    if dimension is not None:
+        p.dimension = dimension
+        print(f"  Overriding dimension to {dimension}")
     p.title=title
     p.g  = float(g)
     p.l_harm_x=float(l_x)
