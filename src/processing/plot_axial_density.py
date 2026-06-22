@@ -34,7 +34,7 @@ def plot_1d_axial_density(fig, ax, name_list = ["psi_1d", "psi_1d_2"], color="bl
   # Load the 3D array from the HDF5 file
   interpolation = "none"
   for name in name_list:
-    file_name = "results/"+name+".h5"
+    file_name = "results/snapshots/"+name+".h5"
     field_key = "psi_squared"
     l_x_key = "l"
     
@@ -70,7 +70,7 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
   # starting from the color specified as a parameter, build a list of colors
   colors = ["blue", "red"]
   for idx, name in enumerate(name_list):
-    file_name = "results/"+name+".h5"
+    file_name = "results/snapshots/"+name+".h5"
     field_key = "psi_squared"
     l_x_key = "l_x"
     l_y_key = "l_y"
@@ -113,6 +113,7 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
       'z [dl]':  l_x_upsampled/dl,
       'n [AU]' : x_resampled
     })
+    os.makedirs("results/export", exist_ok=True)
     df.to_csv("results/export/"+name+".csv", index=False)
     print("NORMALIZATION: ", np.sum(x_resampled) * dz_upsampled)
     # Save the plot as a PNG file
@@ -125,7 +126,7 @@ def plot_3d_axial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-")
 def plot_3d_radial_density(fig, ax, name_list = ["psi_1d"], color="blue", ls="-"):
     # Load the 3D array from the HDF5 file
   for name in name_list:
-    file_name = "results/"+name+".h5"
+    file_name = "results/snapshots/"+name+".h5"
     field_key = "psi_squared"
     l_x_key = "l_x"
     l_y_key = "l_y"
@@ -385,7 +386,7 @@ if __name__ == "__main__":
   t_range = np.linspace(0.8, 1.9, 2)
   for time in t_range:
     plot_3d_radial_density_dyn(fig, ax, 
-                               name_list=["results/dyn_idx-3_1700_3d.h5"], 
+                               name_list=["results/snapshots/dyn_idx-3_1700_3d.h5"],
                                color=None, 
                                ls="-",
                                time=time,
@@ -407,7 +408,8 @@ if __name__ == "__main__":
           "gaussian": np.compress(np.abs(x_data) < 0.5e-5, ax.get_lines()[1].get_ydata()),
           "t=2":      np.compress(np.abs(x_data) < 0.5e-5, ax.get_lines()[2].get_ydata()),
       })
-    df.to_csv("results/transverse.csv", index=False)
+    os.makedirs("results/sweeps", exist_ok=True)
+    df.to_csv("results/sweeps/transverse.csv", index=False)
   except:
     pass
   print("Saved results/transverse.csv")

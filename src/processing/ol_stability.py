@@ -70,11 +70,13 @@ v0s = np.linspace(0.0, v0_max, 8)
 v0s = [0.0]
 
 if default.npse == True and default.dimension == 1:
-  name = f"results/ol_stability_npse.csv"
+  name = f"results/sweeps/ol_stability_npse.csv"
 else:
-  name = f"results/ol_stability_{d}d.csv"
+  name = f"results/sweeps/ol_stability_{d}d.csv"
  
-if ~os.path.exists(name) or recompute:
+os.makedirs(os.path.dirname(name), exist_ok=True)
+
+if not os.path.exists(name) or recompute:
   # exit()
   # cases = ["", "_low", "_high"]
   gcs = np.zeros(len(v0s))
@@ -110,7 +112,7 @@ x_new_var = np.linspace(x_var[0], x_var[-1], 100)
 y_new_var = f_var(x_new_var)
 
 df_loaded = pd.read_csv(name)
-df_loaded = pd.read_csv(f"results/ol_stability_npse.csv")
+df_loaded = pd.read_csv(f"results/sweeps/ol_stability_npse.csv")
 v0s = df_loaded["v0"].to_numpy()
 gcs = df_loaded["g_c"].to_numpy()
 f = interp1d(v0s, gcs, kind='cubic')
