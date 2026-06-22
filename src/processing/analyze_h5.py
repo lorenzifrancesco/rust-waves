@@ -24,5 +24,5 @@ def inspect_h5_file(filename):
 
 if __name__ == "__main__":
     # Check the file that caused the error
-    filename = "results/pre-quench_3d.h5"  # Adjust path if needed
+    filename = "results/snapshots/pre-quench_3d.h5"  # Adjust path if needed
     inspect_h5_file(filename)

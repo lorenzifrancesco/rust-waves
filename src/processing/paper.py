@@ -40,16 +40,16 @@ l = Simulation(input_params="input/_params.toml",
                rust="./target/release/rust_waves",
                dimension=d)
 l.compile("release")
-if not os.path.exists(f"results/pre-quench_{d}d.h5") or recompute:
+if not os.path.exists(f"results/snapshots/pre-quench_{d}d.h5") or recompute:
   l.run()
 if plotting_evolution:
   if d == 1:
-    plot_heatmap_h5(f"results/dyn_pre-quench_{d}d.h5")
-    plot_snap(f"results/pre-quench_{d}d.h5")
+    plot_heatmap_h5(f"results/snapshots/dyn_pre-quench_{d}d.h5")
+    plot_snap(f"results/snapshots/pre-quench_{d}d.h5")
   elif d == 3:
     plot_projections([f"pre-quench_{d}d"])
     movie(f"dyn_pre-quench_{d}d")
-    # plot_snap(f"results/pre-quench_{d}d.h5")
+    # plot_snap(f"results/snapshots/pre-quench_{d}d.h5")
 
 # exit()
 print("_____ computing the widths ______")
@@ -64,17 +64,17 @@ for i, a_s in enumerate(params):
                rust="./target/release/rust_waves",
                dimension=d)
   # exit() # save the zero simulation
-  if not os.path.exists(f"results/idx-{i}_{d}d.h5") or recompute:
-    print("Computing wavefunction for ", f"results/idx-{i}_{d}d.h5")
+  if not os.path.exists(f"results/snapshots/idx-{i}_{d}d.h5") or recompute:
+    print("Computing wavefunction for ", f"results/snapshots/idx-{i}_{d}d.h5")
     l.run()
   if plotting_evolution:
     if d == 1: 
-      plot_heatmap_h5(f"results/dyn_idx-{i}_{d}d.h5", i)
-      plot_snap(f"results/idx-{i}_{d}d.h5", i)
+      plot_heatmap_h5(f"results/snapshots/dyn_idx-{i}_{d}d.h5", i)
+      plot_snap(f"results/snapshots/idx-{i}_{d}d.h5", i)
     elif d == 3:
       plot_projections([f"idx-{i}_{d}d"], i)
       movie(f"dyn_idx-{i}_{d}d", i)
-      # plot_snap(f"results/idx-{i}_{d}d.h5", i)
+      # plot_snap(f"results/snapshots/idx-{i}_{d}d.h5", i)
     
   remaining_particle_fraction[i], result_widths[i] = width_from_wavefunction(f"idx-{i}", dimensions=d)
   print("Width: ", result_widths[i])
@@ -88,9 +88,9 @@ df = pd.DataFrame({
     "particle_fraction": remaining_particle_fraction
 })
 if default.npse == True and default.dimension == 1:
-  df.to_csv(f"results/widths_final_npse.csv", index=False)
+  df.to_csv(f"results/sweeps/widths_final_npse.csv", index=False)
 else:
-  df.to_csv(f"results/widths_final_{d}d.csv", index=False)
+  df.to_csv(f"results/sweeps/widths_final_{d}d.csv", index=False)
 
 print("Plotting...")
 plot_widths(noise=0.0, 

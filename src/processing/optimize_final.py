@@ -106,16 +106,16 @@ def continuously_update_screen():
                     input_params="input/_params.toml",
                     output_file="results/",
                     rust="./target/release/rust_waves")
-                filename = "results/dyn_" + \
+                filename = "results/snapshots/dyn_" + \
                     l.cf["title"]+"_"+str(int(l.dimension))+"d.h5"
-                # filename = "results/dyn_fig3c_1d.h5"
+                # filename = "results/snapshots/dyn_fig3c_1d.h5"
                 # print("Dimension: ", l.dimension)
                 l.compile("release")
 
                 # l.run()
 
-                filename_red =  "results/dyn_fig3c-red_"+str(int(l.dimension))+"d.h5"
-                filename_blue = "results/dyn_fig3c-blue_"+str(int(l.dimension))+"d.h5"
+                filename_red =  "results/snapshots/dyn_fig3c-red_"+str(int(l.dimension))+"d.h5"
+                filename_blue = "results/snapshots/dyn_fig3c-blue_"+str(int(l.dimension))+"d.h5"
                 # assert(filename in [filename_red, filename_blue])
                 # after_run(l, filename_red, l.cf)
                 after_run(l, [filename_blue, filename_red], l.cf)

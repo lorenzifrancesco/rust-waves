@@ -76,7 +76,7 @@ def continuously_update_screen():
                     input_params="input/_params.toml",
                     output_file="results/",
                     rust="./target/release/rust_waves")
-                filename = "results/dyn_" + \
+                filename = "results/snapshots/dyn_" + \
                     l.cf["title"]+"_"+str(int(l.dimension))+"d.h5"
                 # print("Dimension: ", l.dimension)
                 assert (l.dimension == 1)

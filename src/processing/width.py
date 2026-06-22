@@ -75,15 +75,15 @@ for cs in cases:
   l.compile("release")
   # exit()
 
-  if not os.path.exists(f"results/pre-quench"+case+f"_{d}d.h5") or recompute:
+  if not os.path.exists(f"results/snapshots/pre-quench"+case+f"_{d}d.h5") or recompute:
     l.run()
   if plotting_evolution:
     if d == 1:
-      plot_heatmap_h5(f"results/dyn_pre-quench"+case+f"_{d}d.h5")
-      plot_snap(f"results/pre-quench_{d}d"+case+".h5")
+      plot_heatmap_h5(f"results/snapshots/dyn_pre-quench"+case+f"_{d}d.h5")
+      plot_snap(f"results/snapshots/pre-quench_{d}d"+case+".h5")
     elif d == 3:
       # plot_projections([f"pre-quench"+case+f"_{d}d"+case])
-      plot_heatmap_h5_3d(f"results/dyn_pre-quench"+case+f"_{d}d.h5", -1)
+      plot_heatmap_h5_3d(f"results/snapshots/dyn_pre-quench"+case+f"_{d}d.h5", -1)
       # movie(f"dyn_pre-quench"+case+f"_{d}d")
 
   pf0, w0 = width_from_wavefunction(f"pre-quench",
@@ -105,21 +105,21 @@ for cs in cases:
                 output_file="results/",
                 rust="./target/release/rust_waves",)
     # exit() # save the zero simulation
-    name = f"results/idx-{i}"+case+f"_{d}d.h5"
+    name = f"results/snapshots/idx-{i}"+case+f"_{d}d.h5"
     print("Searching for ", name)
     if not os.path.exists(name) or recompute:
-      # print("Computing wavefunction for ", f"results/idx-{i}"+case+f"_{d}d.h5")
+      # print("Computing wavefunction for ", f"results/snapshots/idx-{i}"+case+f"_{d}d.h5")
       l.run()
       # pass
     else:
       print("  Found!")
     if plotting_evolution:
       if d == 1:
-        plot_heatmap_h5(f"results/dyn_idx-{i}"+case+f"_{d}d.h5", i)
-        plot_snap(f"results/idx-{i}_{d}d"+case+".h5", i)
+        plot_heatmap_h5(f"results/snapshots/dyn_idx-{i}"+case+f"_{d}d.h5", i)
+        plot_snap(f"results/snapshots/idx-{i}_{d}d"+case+".h5", i)
       elif d == 3:
         # plot_projections([f"idx-{i}"+case+f"_{d}d"], i)
-        plot_heatmap_h5_3d(f"results/dyn_idx-{i}"+case+f"_{d}d.h5", i)
+        plot_heatmap_h5_3d(f"results/snapshots/dyn_idx-{i}"+case+f"_{d}d.h5", i)
         # movie(f"dyn_idx-{i}"+case+f"_{d}d"+case, i)
         # movie(f"dyn_idx-{i}"+case+f"_{d}d", i)
     try:
@@ -141,9 +141,9 @@ for cs in cases:
         "particle_fraction": remaining_particle_fraction
     })
     if default.npse == True and default.dimension == 1:
-      df.to_csv(f"results/widths/widths_final_npse"+case+".csv", index=False)
+      df.to_csv(f"results/widths_final_npse"+case+".csv", index=False)
     else:
-      df.to_csv(f"results/widths/widths_final_{d}d"+case+".csv", index=False)
+      df.to_csv(f"results/widths_final_{d}d"+case+".csv", index=False)
     print("Plotting...")
     plot_widths(noise=0.0,
                   plot=True,

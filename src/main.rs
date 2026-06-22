@@ -35,8 +35,8 @@ fn main() {
 fn simulation_1d(params: &Params) {
     // Define the path to your TOML file
     info!("1D simulation... \n Parsing the input TOML file...");
-    let output = format!("results/{}_1d.h5", params.title);
-    let output_dyn = format!("results/dyn_{}_1d.h5", params.title);
+    let output = format!("results/snapshots/{}_1d.h5", params.title);
+    let output_dyn = format!("results/snapshots/dyn_{}_1d.h5", params.title);
 
     let n_l = params.numerics.n_l;
     let l = params.numerics.l;
@@ -46,8 +46,8 @@ fn simulation_1d(params: &Params) {
     assert!(l_range.len() == n_l, "The range is not correct");
     let mut initial_wave;
     if params.initial.w <= 0.0 {
-        debug!("Loading the 'results/pre-quench_1d.h5' wavefunction...");
-        initial_wave = load_1d_wavefunction("results/pre-quench_1d.h5").unwrap();
+        debug!("Loading the 'results/snapshots/pre-quench_1d.h5' wavefunction...");
+        initial_wave = load_1d_wavefunction("results/snapshots/pre-quench_1d.h5").unwrap();
     } else {
         debug!("Creating the initial wavefunction as a Gaussian...");
         initial_wave = Wavefunction1D {
@@ -98,8 +98,8 @@ fn simulation_3d(params: &Params) {
         "3D simulation...);
   info!(Parsing the input TOML file..."
     );
-    let output = format!("results/{}_3d.h5", params.title);
-    let output_dyn = format!("results/dyn_{}_3d.h5", params.title);
+    let output = format!("results/snapshots/{}_3d.h5", params.title);
+    let output_dyn = format!("results/snapshots/dyn_{}_3d.h5", params.title);
     // let n_l = params.numerics.n_l;
     let l = params.numerics.l;
     assert!(l > 2.0 * params.initial.w, "The domain is too small");
@@ -122,8 +122,8 @@ fn simulation_3d(params: &Params) {
 
     let mut initial_wave;
     if params.initial.w <= 0.0 {
-        debug!("Loading the 'results/pre-quench_3d.h5' wavefunction...");
-        initial_wave = load_3d_wavefunction("results/pre-quench_3d.h5").unwrap();
+        debug!("Loading the 'results/snapshots/pre-quench_3d.h5' wavefunction...");
+        initial_wave = load_3d_wavefunction("results/snapshots/pre-quench_3d.h5").unwrap();
     } else {
         info!("Creating the initial wavefunction as a Gaussian...");
         initial_wave = Wavefunction3D {
@@ -171,7 +171,7 @@ mod tests {
             field: vec![I; 10],
             l: vec![0.0; 10],
         };
-        save_1d_wavefunction(&psi, "results/test.h5").unwrap();
+        save_1d_wavefunction(&psi, "results/snapshots/test.h5").unwrap();
     }
 
     #[test]
@@ -182,6 +182,6 @@ mod tests {
             l_y: vec![0.0; 10],
             l_z: vec![0.0; 10],
         };
-        save_3d_wavefunction(&psi, "results/psi_3d.h5").unwrap();
+        save_3d_wavefunction(&psi, "results/snapshots/psi_3d.h5").unwrap();
     }
 }

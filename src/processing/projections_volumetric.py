@@ -8,7 +8,7 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
   # Load the 3D array from the HDF5 file
   interpolation = "none"
   for name in name_list:
-    file_name = "results/"+name+".h5"
+    file_name = "results/snapshots/"+name+".h5"
     field_key = "psi_squared"
     l_x_key = "l_x"
     l_y_key = "l_y"
@@ -77,7 +77,7 @@ def plot_projections(name_list = ["psi_3d", "psi_3d_2"], i = -1):
 
 
 def movie(name, i = -1):
-    path = "results/"+name+".h5"
+    path = "results/snapshots/"+name+".h5"
     t, frames = load_hdf5_data(path)
     output_file = f"media/idx-{i}_heatmap_3d.gif"
     create_gif(t, frames, output_file)
