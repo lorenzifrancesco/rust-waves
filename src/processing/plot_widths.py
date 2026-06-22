@@ -21,28 +21,24 @@ def width_from_wavefunction(title,
                             harmonium=False, 
                             case="", 
                             particle_threshold=0.3):
-    filename = "".join(["results/", title,"_", str(dimensions), "d.h5"])
-    # print("Computing wavefunction for ", filename)
+    # WARNING: do NOT mask the wavefunction to a narrow window (e.g. ±4 sites)
+    # when computing the width. Tails of delocalized states extend far beyond
+    # ±4 sites (up to 45% of atoms for repulsive cases), and masking clips
+    # them, underestimating the true width by 40-70%. Use the full domain.
+    filename = "".join(["results/snapshots/", title,"_", str(dimensions), "d.h5"])
     params = Params.read("input/_params.toml")
-    # we sum only on [-4, +4] lattice sites.
-    min_idx = params.dl * -4
-    max_idx = -min_idx
     if dimensions == 1:
         with h5py.File(filename, "r") as f:
             l = np.array(f["l"])
             final_psi2 = np.array(f["psi_squared"])
-        mask = (l >= min_idx) & (l <= max_idx)
-        # print(mask)
         dz = l[1] - l[0]
-        particle_fraction = np.sum(final_psi2[mask]) * dz
+        particle_fraction = np.sum(final_psi2) * dz
         if particle_fraction < particle_threshold:
           particle_fraction = np.nan
-        # print(f"particle fraction = {particle_fraction}")
-        center = dz * np.sum(l[mask] * final_psi2[mask]) / particle_fraction
+        
+        center = dz * np.sum(l * final_psi2) / particle_fraction
         
         if harmonium:
-          min_idx = params.dl * -4
-          max_idx = -min_idx
           std = 0.0
           for site in range(-4, 5):
             lower_end = (site - 0.5) * params.dl
@@ -50,37 +46,29 @@ def width_from_wavefunction(title,
             mask = (l >= lower_end) & (l <= upper_end)
             n_i = np.sum(dz * final_psi2[mask]) / particle_fraction
             std += site**2 * n_i
-            # print(f"Site = {site:3d}, [{lower_end:3.2f}, {upper_end:3.2f} ] n_site ={n_i:3.2f} ")
           std = np.sqrt(std - center**2)
         else:
           std = np.sqrt(dz * 
                       np.sum(
-                        l[mask]**2 * final_psi2[mask]
+                        l**2 * final_psi2
                         )/particle_fraction - center**2)
-        # now we overwrite with the total particle fraction
-        particle_fraction = np.sum(final_psi2) * dz
-        # print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
     else:
         with h5py.File(filename, "r") as f:
             l_x = np.array(f["l_x"])
             l_y = np.array(f["l_y"])
             l_z = np.array(f["l_z"])
             psi_squared = np.array(f["psi_squared"])
-        mask = (l_x >= min_idx) & (l_x <= max_idx)
-        # print(mask)
         dx = l_x[1] - l_x[0]
         dy = l_y[1] - l_y[0]
         dz = l_z[1] - l_z[0]
         dV = dx * dy * dz
-        particle_fraction = np.sum(psi_squared[mask, :, :]) * dV
+        particle_fraction = np.sum(psi_squared) * dV
         if particle_fraction < particle_threshold:
           particle_fraction = np.nan
-        # print(f"particle fraction = {particle_fraction}")
-        center = np.sum(l_x[mask, None, None] * psi_squared[mask, :, :]) * dV / particle_fraction
+        
+        center = np.sum(l_x[:, None, None] * psi_squared) * dV / particle_fraction
         
         if harmonium:
-          min_idx = params.dl * -4
-          max_idx = -min_idx
           std = 0.0
           for site in range(-4, 5):
             lower_end = (site - 0.5) * params.dl
@@ -88,20 +76,45 @@ def width_from_wavefunction(title,
             mask = (l_x >= lower_end) & (l_x <= upper_end)
             n_i = np.sum(dV * psi_squared[mask, :, :]) / particle_fraction
             std += site**2 * n_i
-            # print(f"Site = {site:3d}, [{lower_end:3.2f}, {upper_end:3.2f} ] n_site ={n_i:3.2f} ")
           std = np.sqrt(std - center**2)
         else:
           std = np.sqrt(dV *
                   np.sum(
-                    l_x[mask, None, None]**2 * psi_squared[mask, :, :]
+                    l_x[:, None, None]**2 * psi_squared
                     ) / particle_fraction - center**2)
-        # now we overwrite with the total particle fraction
-        particle_fraction = np.sum(psi_squared)* dV
-        # print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
 
     if np.isnan(particle_fraction):
         particle_fraction = 0
     return particle_fraction, std/params.dl
+
+
+def central_site_fraction(title, dimensions=1):
+    filename = f"results/snapshots/{title}_{dimensions}d.h5"
+    params = Params.read("input/_params.toml")
+    lower = -0.5 * params.dl
+    upper = 0.5 * params.dl
+    if dimensions == 1:
+        with h5py.File(filename, "r") as f:
+            l = np.array(f["l"])
+            final_psi2 = np.array(f["psi_squared"])
+        dz = l[1] - l[0]
+        mask = (l >= lower) & (l <= upper)
+        n_c = np.sum(final_psi2[mask]) * dz
+        n_tot = np.sum(final_psi2) * dz
+    else:
+        with h5py.File(filename, "r") as f:
+            l_x = np.array(f["l_x"])
+            l_y = np.array(f["l_y"])
+            l_z = np.array(f["l_z"])
+            psi_squared = np.array(f["psi_squared"])
+        dx = l_x[1] - l_x[0]
+        dy = l_y[1] - l_y[0]
+        dz = l_z[1] - l_z[0]
+        dV = dx * dy * dz
+        mask = (l_x >= lower) & (l_x <= upper)
+        n_c = np.sum(psi_squared[mask, :, :]) * dV
+        n_tot = np.sum(psi_squared) * dV
+    return n_c / n_tot if n_tot > 0 else 0.0
 
 
 def apply_noise_to_widths(w, l, noise_atoms, n_atoms):
@@ -144,14 +157,14 @@ def plot_widths_cumulative(noise=0.0,
         for idx, cs in enumerate(cases):
             case = "_"+str(cs)
             # try:
-            #     data_1 = pd.read_csv("results/widths/widths_final_1d"+case+".csv", header=0, names=[
+            #     data_1 = pd.read_csv("results/widths_final_1d"+case+".csv", header=0, names=[
             #                         "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
             #     data_list.append(data_1)
             #     labels.append("1D"+case)
             # except:
             #     print("No 1D data")
             # try:
-            #     data_npse = pd.read_csv("results/widths/widths_final_npse"+case+".csv", header=0, names=[
+            #     data_npse = pd.read_csv("results/widths_final_npse"+case+".csv", header=0, names=[
             #                             "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
             #     data_list.append(data_npse)
             #     labels.append("NPSE"+case)
@@ -246,8 +259,8 @@ def plot_widths_cumulative(noise=0.0,
         "min_fraction": min_fraction,
         "avg_fraction": avg_fraction
     })
-    df.to_csv(f"results/widths/cumulative.csv", index=False)
-    print("Saved CSV to results/widths/cumulative.csv")
+    df.to_csv(f"results/cumulative.csv", index=False)
+    print("Saved CSV to results/cumulative.csv")
     plt.xlabel(r"$a_s/a_0$")
     plt.ylabel(r"$w_z$ [sites] ")
     plt.xlim([-21, 1.0])
@@ -313,7 +326,7 @@ def plot_widths(noise=0.0,
     data_list = []
     labels = []
     try:
-        data_1 = pd.read_csv("results/widths/widths_final_1d"+case+".csv", header=0, names=[
+        data_1 = pd.read_csv("results/widths_final_1d"+case+".csv", header=0, names=[
                              "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
         if "1d" in eqs:
             data_list.append(data_1)
@@ -321,7 +334,7 @@ def plot_widths(noise=0.0,
     except:
         print("No 1D data")
     try:
-        data_npse = pd.read_csv("results/widths/widths_final_npse"+case+".csv", header=0, names=[
+        data_npse = pd.read_csv("results/widths_final_npse"+case+".csv", header=0, names=[
                                 "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
         if "npse" in eqs:
             data_list.append(data_npse)
@@ -329,7 +342,7 @@ def plot_widths(noise=0.0,
     except:
         print("No NPSE data")
     try:
-        data_3 = pd.read_csv("results/widths/widths_final_3d"+case+".csv", header=0, names=[
+        data_3 = pd.read_csv("results/widths_final_3d"+case+".csv", header=0, names=[
                              "a_s", "width", "width_sim", "width_rough", "particle_fraction"])
         if "3d" in eqs:
             data_list.append(data_3)
@@ -448,9 +461,9 @@ if __name__ == "__main__":
     # plot_widths(0.0, 
     #             plot=True, 
     #             initial_number=3000)
-    # file_list = ["results/widths/widths_final_1d.csv",
-    #              "results/widths/widths_final_npse.csv",
-    #              "results/widths/widths_final_3d.csv"]
+    # file_list = ["results/widths_final_1d.csv",
+    #              "results/widths_final_npse.csv",
+    #              "results/widths_final_3d.csv"]
     # noises = []
     # for f in file_list:
     #     print("evaluating -> ", f)

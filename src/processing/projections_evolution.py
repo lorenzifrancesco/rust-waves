@@ -21,7 +21,7 @@ plt.rcParams.update({
 hbar = 1.0545718e-34
 m = 2.21e-25
 
-def plot_heatmap_h5(filename="results/1d.h5", i=-1, experiment_file = "input/experiment.toml"):
+def plot_heatmap_h5(filename="results/snapshots/1d.h5", i=-1, experiment_file = "input/experiment.toml", outpath=None):
   with h5py.File(filename, "r") as f:
       l = np.array(f["l"])  # Load l (spatial coordinate)
       t = np.array(f["t"])  # Load t (time coordinate)
@@ -106,13 +106,12 @@ def plot_heatmap_h5(filename="results/1d.h5", i=-1, experiment_file = "input/exp
     transform=ax_lineplot.transAxes,  # Use axes coordinates
     color='black', fontsize=8, ha='right', va='bottom'
   )
-  ax_lineplot.set_ylim((0.33, 1.1))
   # ax_lineplot.legend(loc="upper right")
   fig.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.15)
   
   plt.tight_layout()
 
-  heatmap_filename = "media/idx-"+str(i)+".pdf"
+  heatmap_filename = outpath or f"media/idx-{i}.pdf"
   plt.savefig(heatmap_filename, dpi=300, pad_inches=0.1)
   plt.close()
   print(f"Heatmap saved as {heatmap_filename}")
@@ -161,13 +160,12 @@ def load_hdf5_data_single_axis(filename):
   return t, l_x, frames, np.array(numbers)
 
 
-def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.toml"):
+def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.toml", override_n_atoms = None, outpath=None):
   par = toml.load("input/_params.toml")
   params = par["numerics"]
   t, l, frames, atom_number = load_hdf5_data_single_axis(filename) 
   plt.figure(figsize=(3, 3))
   
-  extent = [t.min(), t.max(), l.min(), l.max()]
   # print(t)
   # print(len(t))
   psi2_values = np.array([f for f in frames]).reshape(len(t), len(l)).T
@@ -181,104 +179,128 @@ def plot_heatmap_h5_3d(filename="3d", i=-1, experiment_file = "input/experiment.
   time_points = len(t)
   d = par["physics"]["dl"] * l_perp
   dz = (l[1]-l[0])
-  atom_number = np.sum(psi2_values, axis=0) * dz * exp_par["n_atoms"]
+  if override_n_atoms is not None:
+    atom_number = np.sum(psi2_values, axis=0) * dz * override_n_atoms
+  else:  
+    atom_number = np.sum(psi2_values, axis=0) * dz * exp_par["n_atoms"]
+  
+  # FIXME implement more robustly
+  x_avg = (x_max + x_min) / 2
+  guard = 1 * d / l_perp
+  mask = (l > x_avg - guard) & (l < x_avg + guard)
+  vecc = l[:, None]**2 * psi2_values
+  dynamical_width = np.sqrt(np.sum(vecc * dz, axis = 0) / (np.sum(psi2_values, axis=0) * dz))
+  max_focus_width = np.min(dynamical_width)
+  max_focus_time = np.argmin(dynamical_width)
+  
   df = pd.DataFrame({
     't [s]': t * t_perp,
     'n_atoms []': atom_number
   })
   name = re.search(r"dyn_(.+?)\.h5", filename).group(1)
   df.to_csv("./results/export/atom_number_"+name+".csv", index=False)
-  # fig, axes = plt.subplots(1, 1, figsize=(3, 2.2), dpi=600)
-  # # aspect = (t.max() - t.min()) / (l.max() - l.min())
-
-  # im2 = plt.imshow(psi_squared,
-  #                     aspect="equal", 
-  #                     origin="lower", 
-  #                     cmap="nipy_spectral", 
-  #                     interpolation="bicubic",
-  #                     extent=extent, 
-  #                     # vmin=vmin, vmax=vmax)
-  # )
-  # plt.colorbar(label=r"$|f|^2$")
-  # plt.xlabel(r"$t$")
-  # plt.ylabel(r"$z$")
-  # plt.tight_layout()
-  # plt.savefig(f"media/idx-{i}_heatmap.png", dpi=600)
-  # print(f"Saved 3D heatmap as 'media/idx-{i}_heatmap.png'.")
   fig = plt.figure(figsize=(4, 3.5))
-  gs = fig.add_gridspec(2, 2, width_ratios=[40, 1], height_ratios=[4, 1], wspace=0.15, hspace=0.2)
-
-  ax_heatmap = fig.add_subplot(gs[0, 0])  
+  gs = fig.add_gridspec(3, 2, width_ratios=[40, 1], height_ratios=[4, 1, 1], wspace=0.15, hspace=0.2)
+  ax_heatmap = fig.add_subplot(gs[0, 0])
   
-  # saving for export
-  # FIXME 
+  # FIXME check better
   print("WARN: check the normalization used")
+
+  # Normalize and scale psi2
   psi2_values /= l_perp
   psi2_values *= exp_par["n_atoms"]
-  # print(f"l_perp = {l_perp}, dl = {(l[1]-l[0])*l_perp}")
+
+  # Save to CSV
   df = pd.DataFrame(psi2_values)
-  df.to_csv("results/widths/"+str(i)+".csv", index=False, header=False)
+  df.to_csv(f"results/{i}.csv", index=False, header=False)
+
+  # Plot heatmap
+  extent = [0, t[-1] * 1e3 * t_perp, l.min(), l.max()]  # Time in ms, spatial in μm
   ax_heatmap.imshow(
       psi2_values,
       cmap="nipy_spectral",
-      # cbar=False,  # Disable the default colorbar
-      # ax=ax_heatmap, 
       interpolation="bicubic",
+      # extent=extent,
+      origin="lower",
+      aspect="auto"
   )
+
+  # Zoom settings
   x_zoom = 10
-  lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
-  lim_top = int(round((x_max+x_zoom)/(2*x_max)* space_points))
-  ax_heatmap.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
+  lim_bottom = int(round((x_max - x_zoom) / (2 * x_max) * space_points))
+  lim_top = int(round((x_max + x_zoom) / (2 * x_max) * space_points))
+  ax_heatmap.set_yticks([0, lim_bottom, int(round(space_points / 2)), lim_top, space_points - 1])
   ax_heatmap.set_ylim(bottom=lim_bottom, top=lim_top)
-  ax_heatmap.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
+  ax_heatmap.set_yticklabels([
+      f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"
+  ])
   ax_heatmap.set_ylabel(r'$z$ [\textmu m]')
-  ax_heatmap.axhline((x_max+d/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=1)
-  ax_heatmap.axhline((x_max-d/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=1)
-  # ax_heatmap.set_aspect(t_max / (2*x_max))
-  ax_heatmap.set_aspect(len(t) / (lim_top-lim_bottom))
-  # Add colorbar to the right of the entire plot
-  cbar_ax = fig.add_subplot(gs[:, 1])  # Colorbar spans both rows
+  ax_heatmap.axhline((x_max + d / 2 * 1e6) / (2 * x_max) * space_points, color='w', linestyle='--', lw=1)
+  ax_heatmap.axhline((x_max + 2 * guard)/(2 * x_max) * space_points, color='w', linestyle=':', lw=1.5)
+  ax_heatmap.axhline((x_max - 2 * guard)/(2 * x_max) * space_points, color='w', linestyle=':', lw=1.5)
+  ax_heatmap.axhline((x_max - d / 2 * 1e6) / (2 * x_max) * space_points, color='w', linestyle='--', lw=1)
+
+  # Colorbar
+  cbar_ax = fig.add_subplot(gs[:, 1])
   norm = plt.Normalize(vmin=np.min(psi2_values), vmax=np.max(psi2_values))
   sm = plt.cm.ScalarMappable(cmap="nipy_spectral", norm=norm)
   cbar = Colorbar(cbar_ax, sm, orientation='vertical')
   cbar.set_label(r'$n(z) \; [\mathrm{atoms} /\mathrm{m}]$', rotation=90)
 
+  # # Experimental data
+  # t_experiment = np.array([
+  #     0.0005972409705988849,
+  #     0.05041122049188423,
+  #     0.10030948539821552,
+  #     0.15022026141638956,
+  #     0.20013301287327562,
+  #     0.2497481315642182
+  # ]) / t_perp
+  # atom_number_experiment = np.array([
+  #     2876.8182267145166,
+  #     2169.5453198564514,
+  #     2009.2845619464656,
+  #     1930.2209198959604,
+  #     1863.9778750864255,
+  #     1866.098179303987
+  # ])
+
   # Line plot for atom number
-  t_experiment = np.array([0.0005972409705988849,
-  0.05041122049188423,
-  0.10030948539821552,
-  0.15022026141638956,
-  0.20013301287327562,
-  0.2497481315642182]) / t_perp
-  atom_number_experiment = np.array([
-  2876.8182267145166,
-  2169.5453198564514,
-  2009.2845619464656,
-  1930.2209198959604,
-  1863.9778750864255,
-  1866.098179303987])
   ax_lineplot = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
-  time_fullscale = time_points - 1
-  time_data = t[-1]
-  ax_lineplot.plot(t * time_fullscale/time_data, atom_number, color='blue', lw=0.2)
-  ax_lineplot.scatter(t_experiment * time_fullscale/time_data, atom_number_experiment, color='red', s=10, label="Experiment", zorder=3)
+  t_ms = t * t_perp * 1e3  # Convert to milliseconds
+  ax_lineplot.plot(t_ms, atom_number, color='blue', lw=0.2)
+  # ax_lineplot.scatter(t_experiment * 1e3, atom_number_experiment, color='red', s=10, label="Experiment", zorder=3)
   ax_lineplot.set_xlabel(r'$t \quad [\mathrm{ms}]$')
   ax_lineplot.set_ylabel(r'$N(t)$')
-  ax_lineplot.set_xticks([0, time_fullscale])  # Positions: start and end of time
-  ax_lineplot.set_xticklabels([f"{0.0:.1f}", f"{1e3*t_perp*t[-1]:.0f}"])  # Labels: min and max time
-  ax_heatmap.get_xaxis().set_visible(False)
-  # ax_lineplot.text(f'{atom_number[:-1]}')
   ax_lineplot.text(
-    0.95, 0.3,  # Position of text (relative to axes, [x, y] from bottom-left corner)
-    f'$N(t_f) = {atom_number[-1]:.0f}$',  # Format the final value
-    transform=ax_lineplot.transAxes,  # Use axes coordinates
-    color='black', fontsize=8, ha='right', va='bottom'
+      0.97, 0.3,
+      f'$N(t_f) = {atom_number[-1]:.0f}$',
+      transform=ax_lineplot.transAxes,
+      color='black', fontsize=8, ha='right', va='bottom'
   )
-  # ax_lineplot.set_ylim((0.0, 1.1))
-  # ax_lineplot.legend(loc="upper right")
-  fig.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.15)
 
-  heatmap_filename = "media/3d_heatmap_idx-"+str(i)+".pdf"
+  ax_width = fig.add_subplot(gs[2, 0], sharex=ax_heatmap)
+  ax_width.plot(t_ms, dynamical_width, color='blue', lw=0.2)
+  ax_width.set_xlabel(r'$t \quad [\mathrm{ms}]$')
+  ax_width.set_ylabel(r'$w(t)$')
+  # Set x-axis labels
+  ax_width.set_xticks([0, t_ms[-1]])
+  ax_width.set_xticklabels([f"{0.0:.1f}", f"{t_ms[-1]:.0f}"])
+  ax_width.axhline(max_focus_width, ls = ":", lw = 0.5)
+  ax_width.axvline(max_focus_time , ls = ":", lw = 0.5)
+  ax_width.text(
+      0.97, -1.3,
+      f'$t^< = {max_focus_time:.0f} ms$',
+      transform=ax_lineplot.transAxes,
+      color='black', fontsize=8, ha='right', va='bottom'
+  )
+  
+  ax_heatmap.get_xaxis().set_visible(False)
+  ax_lineplot.get_xaxis().set_visible(False)
+  
+  # Layout and save
+  fig.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.15)
+  heatmap_filename = outpath or f"media/3d_heatmap_idx-{i}.pdf"
   plt.savefig(heatmap_filename, dpi=300, pad_inches=0.1)
   plt.close()
   print(f"Heatmap saved as {heatmap_filename}")
@@ -399,7 +421,7 @@ def plot_first_last():
   plt.figure(figsize=(3, 2))
   ax = plt.gca()
   for ix, name in enumerate(["1d_psi_0.h5", "1d_psi_end.h5"]):
-    plot_final('results/'+name, ax, ix)
+    plot_final('results/snapshots/'+name, ax, ix)
   plt.tight_layout()
   plt.savefig("media/1d_first_last.png", dpi=600)
   print("Saved 1D first-last plot as 'media/1d_first_last.png'.")
@@ -417,10 +439,10 @@ if __name__ == "__main__":
   print("____ Plotting _____")
   # plot_heatmap_h5()
   # plot_first_last()
-  # plot_heatmap_h5('results/dyn_check-np_1d.h5')
+  # plot_heatmap_h5('results/snapshots/dyn_check-np_1d.h5')
   # fig = plt.figure(figsize=(3, 2))
   # ax = plt.gca()
-  # filename = 'results/idx-0_1d.h5'
+  # filename = 'results/snapshots/idx-0_1d.h5'
   # ax = plot_final(filename, ax, 0)
   # plt.tight_layout()
   # plt.show()
