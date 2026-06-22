@@ -1,5 +1,6 @@
 /target
 /dumpster
+/_trash
 /media
 /results*
 /input*
@@ -8,3 +9,4 @@ perf*
 __pycache__
 *.pyc
 elmar_scripts
+resources
