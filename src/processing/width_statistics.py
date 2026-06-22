@@ -4,9 +4,11 @@ import matplotlib.pyplot as plt
 width_files = []
 atom_numbers = [1200, 1700, 2200]
 l3s = [5e-38, 1e-38, 5e-39]
+sweep_mode = "arthur"
+
 for i in [1200, 1700, 2200]:
     for j in l3s:
-        width_files.append(f"results-{j}/widths/widths_final_3d_{i}.csv")
+        width_files.append(f"results-"+sweep_mode+"-{j}/widths/widths_final_3d_{i}.csv")
 
 base = "input/widths.csv"  # Change this to your actual file path
 df = pd.read_csv(base)
