@@ -48,7 +48,9 @@ def after_run(l,
         # print(">> plotting heatmap")
         # p1d_dyn_heatmap.plot_heatmap_h5(
         #     filename=filename)
-        _, _, n_atoms_harmonium_sim = plot_axial_density.plot_1d_axial_density(fig, ax, name_list=[name],)
+        # _, _, n_atoms_harmonium_sim = plot_axial_density.plot_1d_axial_density(fig, ax, name_list=[name],)
+        # 1D harmonium extraction is intentionally disabled for this inspection workflow.
+        pass
     else:
         plot_axial_density.plot_3d_axial_density(fig, ax, name_list=[name], color="blue", ls="-")
         # p3d_snap_projections.movie(name="dyn_test_3d")
@@ -76,20 +78,26 @@ def after_run(l,
     ax.plot(x, y,
             label="3c-multisoliton", color="gray", ls="--", lw=1.3)
     plt.xlim([-6, 6])
+    df = pd.DataFrame({
+        'z [dl]':  x,
+        'n [AU]' : y
+        })
+    os.makedirs("results/export", exist_ok=True)
+    df.to_csv("results/export/GS-"+name+".csv", index=False)
     filename = "input/3c-multisoliton.csv"
     plt.savefig("media/axial-test.pdf", dpi=900)
     print("Saved media/axial-test.pdf")
     
-    n_atoms_harmonium_exp = compute_atom_number_harmonium(x, y)
-    n_tot_1 = np.sum(n_atoms_harmonium_exp)
-    n_tot_2 = np.sum(n_atoms_harmonium_sim)
-    n_atoms_harmonium_exp = n_atoms_harmonium_exp / n_tot_1 * n_tot_2
-    plt.clf()
-    plt.plot(n_atoms_harmonium_exp, label="3c-multisoliton", marker = "x", color="gray", ls="--", lw=1.3
-             )
-    plt.plot(n_atoms_harmonium_sim, label="harmonium simulation",marker ="x", color="blue", ls="-", lw=1.3)
-    plt.savefig("media/harmonium.png", dpi=900)
-    print("Saved media/harmonium.png")
+    # n_atoms_harmonium_exp = compute_atom_number_harmonium(x, y)
+    # n_tot_1 = np.sum(n_atoms_harmonium_exp)
+    # n_tot_2 = np.sum(n_atoms_harmonium_sim)
+    # n_atoms_harmonium_exp = n_atoms_harmonium_exp / n_tot_1 * n_tot_2
+    # plt.clf()
+    # plt.plot(n_atoms_harmonium_exp, label="3c-multisoliton", marker = "x", color="gray", ls="--", lw=1.3
+    #          )
+    # plt.plot(n_atoms_harmonium_sim, label="harmonium simulation",marker ="x", color="blue", ls="-", lw=1.3)
+    # plt.savefig("media/harmonium.png", dpi=900)
+    # print("Saved media/harmonium.png")
 
 def continuously_update_screen():
     try:
@@ -114,13 +122,14 @@ def continuously_update_screen():
                     input_params="input/_params.toml",
                     output_file="results/",
                     rust="./target/release/rust_waves")
-                filename = "results/dyn_" + \
+                filename = "results/snapshots/dyn_" + \
                     l.cf["title"]+"_"+str(int(l.dimension))+"d.h5"
-                # filename = "results/dyn_pre-quench_1d.h5"
+                # filename = "results/snapshots/dyn_pre-quench_1d.h5"
                 # print("Dimension: ", l.dimension)
                 l.compile("release")
 
-                l.run()
+                # Reuse the existing snapshot while interactively adjusting plotting inputs.
+                # l.run()
 
                 after_run(l, filename, l.cf)
 
