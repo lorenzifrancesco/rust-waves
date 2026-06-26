@@ -8,6 +8,30 @@ use ndarray::Axis;
 use std::error::Error;
 use ndrustfft;
 
+pub fn save_1d_wavefunction_complex(
+    wavefunction: &Wavefunction1D,
+    filename: &str,
+) -> hdf5_metno::Result<()> {
+    let file = hdf5_metno::File::create(filename)?;
+    let n = wavefunction.field.len();
+
+    let psi_re: Vec<f64> = wavefunction.field.iter().map(|x| x.re).collect();
+    let psi_im: Vec<f64> = wavefunction.field.iter().map(|x| x.im).collect();
+    let psi_squared: Vec<f64> = wavefunction
+        .field
+        .iter()
+        .map(|x| x.re.powi(2) + x.im.powi(2))
+        .collect();
+
+    file.new_dataset::<f64>().shape(n).create("psi_re")?.write(&psi_re)?;
+    file.new_dataset::<f64>().shape(n).create("psi_im")?.write(&psi_im)?;
+    file.new_dataset::<f64>().shape(n).create("psi_squared")?.write(&psi_squared)?;
+    file.new_dataset::<f64>().shape(n).create("l")?.write(&wavefunction.l)?;
+
+    info!("Complex HDF5 file created as {:?}", &filename);
+    Ok(())
+}
+
 pub fn save_1d_wavefunction(
     wavefunction: &Wavefunction1D,
     filename: &str,

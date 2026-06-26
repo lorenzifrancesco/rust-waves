@@ -1,6 +1,6 @@
 use rust_waves::io::{
     load_1d_wavefunction, load_3d_wavefunction, save_1d_dynamics, save_1d_wavefunction,
-    save_3d_wavefunction,
+    save_1d_wavefunction_complex, save_3d_wavefunction,
 };
 use rust_waves::propagate::*;
 use rust_waves::tools::*;
@@ -81,8 +81,13 @@ fn simulation_1d(params: &Params) {
     // save_1d_wavefunction(&target_psi, "results/1d_psi_0.h5")
     //     .expect("Failed to save the wavefunction");
     save_1d_dynamics(&saved_psi, &output_dyn).expect("Failed to save the dynamics");
-    save_1d_wavefunction(&saved_psi.psi[saved_psi.psi.len() - 1], &output)
-        .expect("Failed to save the wavefunction");
+    if params.physics.npse {
+        save_1d_wavefunction_complex(&saved_psi.psi[saved_psi.psi.len() - 1], &output)
+            .expect("Failed to save the complex wavefunction");
+    } else {
+        save_1d_wavefunction(&saved_psi.psi[saved_psi.psi.len() - 1], &output)
+            .expect("Failed to save the wavefunction");
+    }
     // save_1d_wavefunction(&Wavefunction1D::new(k_squared, initial_wave.l.clone()), "results/1d_psi_end.h5")
     //     .expect("Failed to save the wavefunction");
     info!("Done!");
