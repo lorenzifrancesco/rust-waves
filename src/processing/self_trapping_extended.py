@@ -42,6 +42,11 @@ def as_tag(a_s):
 
 
 def simulation_title(l3, a_s):
+    # Legacy naming (L3=5e-39 only, from self_trapping.py)
+    if l3 == L3_VALUES[0]:
+        legacy = f"ss-as{as_tag(a_s)}"
+        if os.path.exists(f"{SNAPSHOT_DIR}/{legacy}_{D}d.h5"):
+            return legacy
     return f"ss-{l3_tag(l3)}-as{as_tag(a_s)}"
 
 

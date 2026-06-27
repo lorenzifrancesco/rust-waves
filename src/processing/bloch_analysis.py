@@ -29,6 +29,11 @@ from matplotlib.colors import Normalize
 from scipy import linalg
 from scipy.constants import hbar
 
+# Simulation launcher (for 1D NPSE re-runs when only 3D data exists)
+_LAUNCH_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src", "processing"))
+if _LAUNCH_DIR not in sys.path:
+    sys.path.insert(0, _LAUNCH_DIR)
+
 # Paths (resolve from repo root)
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SNAPSHOT_DIR = os.path.join(_REPO_ROOT, "results", "snapshots")
@@ -142,6 +147,71 @@ class BandStructure:
             q -= self.G
         band_offset = int(np.round((k - q) / self.G))
         return q, band_offset
+
+
+# ---------------------------------------------------------------------------
+# 1D NPSE simulation launcher (for 3D→1D Bloch analysis)
+# ---------------------------------------------------------------------------
+
+def _write_params_1d(l3, a_s, title):
+    """Write _params.toml for a 1D NPSE simulation."""
+    try:
+        from launch.rw import write_from_experiment
+    except ImportError:
+        sys.path.insert(0, _LAUNCH_DIR)
+        from launch.rw import write_from_experiment
+
+    exp_run = os.path.join(_REPO_ROOT, "input", "exp_fig2a_run.toml")
+    params_out = os.path.join(_REPO_ROOT, "input", "_params.toml")
+    write_from_experiment(
+        exp_run, params_out, title,
+        a_s=a_s, v_0=1.3, load_gs=True,
+        n_atoms=1800, l_3=l3, dimension=1,
+    )
+
+
+def _run_1d_simulation():
+    """Run the Rust simulation with current _params.toml."""
+    import subprocess
+    rust_bin = os.path.join(_REPO_ROOT, "target", "release", "rust_waves")
+    if not os.path.exists(rust_bin):
+        print("  [BUILD] Compiling Rust (1D NPSE mode)...", flush=True)
+        subprocess.run(
+            ["cargo", "build", "--release"],
+            cwd=_REPO_ROOT, capture_output=True, check=True,
+        )
+    subprocess.run([rust_bin], cwd=_REPO_ROOT, check=True, capture_output=True)
+
+
+def ensure_1d_complex_snapshot(l3, a_s):
+    """Ensure a 1D NPSE snapshot with complex field exists.
+
+    Returns the snapshot title, or None if it could not be obtained.
+    """
+    l3_tag = "L3-" + f"{l3:.0e}".replace("-", "m")
+    as_str = str(a_s).replace("-", "m").replace(".", "p")
+    title = f"ss-{l3_tag}-as{as_str}"
+    snap = os.path.join(SNAPSHOT_DIR, f"{title}_1d.h5")
+
+    if os.path.exists(snap):
+        with h5py.File(snap, "r") as f:
+            if "psi_re" in f and "psi_im" in f:
+                return title
+
+    print(f"  [LAUNCH 1D NPSE] L3={l3:.0e}, a_s={a_s}", flush=True)
+    _write_params_1d(l3, a_s, title)
+    try:
+        _run_1d_simulation()
+    except Exception as e:
+        print(f"  [FAIL] 1D simulation failed: {e}")
+        return None
+
+    if os.path.exists(snap):
+        with h5py.File(snap, "r") as f:
+            if "psi_re" in f and "psi_im" in f:
+                return title
+    print(f"  [WARN] 1D snapshot at {snap} missing complex field")
+    return title if os.path.exists(snap) else None
 
 
 # ---------------------------------------------------------------------------
@@ -389,10 +459,27 @@ def plot_band_populations_sweep(csv_files, outpath):
 # Full decomposition pipeline
 # ---------------------------------------------------------------------------
 
-def decompose_snapshot(title, band_struct, n_bands=4):
-    """Load and decompose a single snapshot into Bloch states."""
-    # Try complex 1D first
+def decompose_snapshot(title, band_struct, n_bands=4, l3=None, a_s=None):
+    """Load and decompose a single snapshot into Bloch states.
+
+    For 3D data (no complex 1D snapshot), automatically launches a 1D NPSE
+    simulation that saves the complex field.
+    """
     wf = load_1d_complex_wavefunction(title)
+    if wf is not None and wf["has_phase"]:
+        proj = project_onto_bloch(wf, band_struct, n_bands=n_bands)
+        return {**wf, **proj}
+
+    if wf is None and l3 is not None and a_s is not None:
+        # 3D sweep point: launch 1D NPSE to get complex field
+        title_1d = ensure_1d_complex_snapshot(l3, a_s)
+        if title_1d:
+            wf = load_1d_complex_wavefunction(title_1d)
+            if wf and wf["has_phase"]:
+                proj = project_onto_bloch(wf, band_struct, n_bands=n_bands)
+                return {**wf, **proj}
+
+    # Fallback: phase-less projection (density only)
     if wf is None:
         wf = load_1d_axial_profile_3d(title)
     if wf is None:
@@ -409,7 +496,7 @@ def decompose_and_plot(row, band_struct, outdir, n_bands=4):
     a_s = row["a_s"]
     title = f"ss-L3-{l3:.0e}".replace("-", "m").replace("+", "") + f"-as{str(a_s).replace('-','m').replace('.','p')}"
 
-    result = decompose_snapshot(title, band_struct, n_bands=n_bands)
+    result = decompose_snapshot(title, band_struct, n_bands=n_bands, l3=l3, a_s=a_s)
     if result is None:
         return None
 
