@@ -3,8 +3,10 @@
 /_trash
 /media
 /results*
-/input*
+!/results/snapshots/.gitkeep
+/input/_params.toml
 *.csv
+!input/widths.csv
 perf*
 __pycache__
 *.pyc

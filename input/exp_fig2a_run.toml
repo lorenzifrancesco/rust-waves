@@ -1,0 +1,14 @@
+# Quench parameters matching Fig 2a
+# ω_⊥ = 2π × 40 Hz, N = 1800, d_L = 3.2 μm, V_0 = 1.3 Er
+# ω_x = 0 (trap off after quench)
+# a_s = placeholder (overwritten by write_from_experiment)
+omega_x =          0.0    # Trap switched off
+a_s =               0.0   # placeholder (overwritten by script)
+l_3 =               5e-39 # m^6 s^-1
+t_f =              100e-3 # s  (hold time in Fig 2a)
+m =                  2.21e-25
+
+n_atoms =          1800
+omega_perp =       251.327 # 2π × 40 Hz
+d =                  3.2e-6
+v_0 =                1.3   # Er (Recoil energy)

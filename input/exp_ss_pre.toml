@@ -1,0 +1,17 @@
+# this file is made for linking the simulation
+# to the experimental simulation values
+# unless stated, all units are in SI
+
+n =                4000
+l =                 50.0 # in units of l_perp
+omega_perp =       188.49 # 2 pi * 30 Hz
+omega_x =          157.0  # 2 pi * 25 Hz
+a_s =               20.0 # in units of a_0
+l_3 =                1e-42 # beware of units: m^6 s^-1
+d =                  2.6e-6
+v_0 =                1.4 # Er (Recoil energy)
+t_f =             1200e-3 # s
+n_t =               100
+tilt =               0.0
+m =                  2.21e-25
+n_atoms =          3000
