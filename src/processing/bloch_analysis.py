@@ -148,6 +148,39 @@ class BandStructure:
         band_offset = int(np.round((k - q) / self.G))
         return q, band_offset
 
+    def solve_at_q(self, q):
+        """Solve the band structure at a single arbitrary q.
+
+        Returns (energies, coefficients) for all bands at this q, where
+        coefficients[n, m] = c_m^{(n)}(q).
+        """
+        H = np.zeros((self.N_m, self.N_m), dtype=complex)
+        for idx, m in enumerate(self.m_range):
+            k = q + m * self.G
+            H[idx, idx] = 0.5 * k ** 2
+            if m - 1 in self.m_range:
+                jdx = np.where(self.m_range == m - 1)[0][0]
+                H[idx, jdx] = -self.V0 / 2.0
+            if m + 1 in self.m_range:
+                jdx = np.where(self.m_range == m + 1)[0][0]
+                H[idx, jdx] = -self.V0 / 2.0
+        evals, evecs = linalg.eigh(H)
+        return evals, evecs
+
+    def evaluate_bloch_state_at_q(self, n, q, z):
+        """Evaluate φ_{n,q}(z) at an arbitrary q (not limited to pre-computed grid)."""
+        _, evecs = self.solve_at_q(q)
+        c_m = evecs[:, n]  # n-th eigenvector
+        z_reshaped = z[:, np.newaxis]
+        m_reshaped = self.m_range[np.newaxis, :]
+        u = np.sum(c_m[np.newaxis, :] * np.exp(1j * m_reshaped * self.G * z_reshaped), axis=1)
+        phi = np.exp(1j * q * z) * u
+        dz = z[1] - z[0]
+        norm = np.sqrt(np.sum(np.abs(phi) ** 2) * dz)
+        if norm > 0:
+            phi /= norm
+        return phi
+
 
 # ---------------------------------------------------------------------------
 # 1D NPSE simulation launcher (for 3D→1D Bloch analysis)
@@ -282,36 +315,74 @@ def load_1d_axial_profile_3d(title, snap_dir=SNAPSHOT_DIR):
 # Projection onto Bloch states
 # ---------------------------------------------------------------------------
 
-def project_onto_bloch(wf_data, band_struct, n_bands=4):
-    """Project wavefunction onto Bloch states.
+def _natural_q_grid(z, G):
+    """Return q-points in 1BZ that are multiples of 2π/L.
 
-    Returns dict with:
-      - q_points: array
-      - weights: (n_bands, n_q) matrix of |c_n(q)|^2
-      - band_populations: (n_bands,) total population per band
-      - momentum_dist: (n_k,) momentum distribution n(k)
-      - k_grid: (n_k,) corresponding momentum grid
+    On a finite domain [-L/2, L/2] these guarantee orthogonality of
+    plane-wave phase factors ⟨e^{iqz}|e^{iq'z}⟩ ∝ δ_{qq'}.
+    """
+    L = z[-1] - z[0]
+    dq = 2.0 * np.pi / L
+    n_max = int(np.floor(G / 2 / dq))
+    q_vals = dq * np.arange(-n_max, n_max + 1)
+    # Trim to stay strictly inside [-G/2, G/2]
+    return q_vals[(q_vals >= -G / 2 + 1e-12) & (q_vals <= G / 2 - 1e-12)]
+
+
+def project_onto_bloch(wf_data, band_struct, n_bands=4):
+    """Project wavefunction onto Bloch states via direct overlap.
+
+    For each band n and pseudomomentum q in the 1st Brillouin zone:
+        c_n(q) = ∫ φ*_{n,q}(z) ψ(z) dz
+
+    where φ_{n,q}(z) = e^{iqz} u_{n,q}(z) is the Bloch state obtained
+    from the plane-wave band-structure solver.
+
+    Unlike the dense internal q-grid of BandStructure (used only for
+    smooth band-structure plots), we evaluate overlaps **only** at
+    q-points that are multiples of 2π/L — the natural Fourier grid of
+    the simulation domain.  These guarantee mutual orthogonality of the
+    phase factors ⟨e^{iqz}|e^{iq'z}⟩ on [-L/2, L/2], so the Bloch states
+    at different q form a proper orthogonal basis (up to finite-domain
+    corrections from the lattice-periodic part u_{n,q}).  Parseval's
+    theorem then gives  Σ_{n,q} |c_n(q)|² ≈ 1 without renormalisation.
+
+    References
+    ----------
+    • Kittel, "Introduction to Solid State Physics" (Bloch theorem)
+    • Kohn, Phys. Rev. 115, 809 (1959)
+    • Greiner et al., Nature 415, 39 (2002)
+
+    Returns
+    -------
+    q_points         : array, 1BZ pseudomomentum grid (Fourier-sampled)
+    weights          : (n_bands, n_q) — |c_n(q)|²
+    band_populations : (n_bands,)  total per band (Σ ≈ 1)
+    momentum_dist    : (n_k,)  |FT[ψ](k)|²  (not normalised)
+    k_grid           : (n_k,)  momentum grid for momentum_dist
     """
     z = wf_data["z"]
     psi = wf_data["psi"]
     dz = wf_data["dz"]
-    n_q = band_struct.n_q
-    q_points = band_struct.q_points
+    G = band_struct.G
     n_bands_actual = min(n_bands, band_struct.n_bands)
+
+    # ---- Use Fourier-sampled q-grid (orthogonal on [-L/2, L/2]) -----
+    q_points = _natural_q_grid(z, G)
+    n_q = len(q_points)
 
     weights = np.zeros((n_bands_actual, n_q))
     for n in range(n_bands_actual):
         for iq in range(n_q):
-            phi = band_struct.evaluate_bloch_state(n, q_points[iq], z)
+            phi = band_struct.evaluate_bloch_state_at_q(n, q_points[iq], z)
             overlap = np.sum(np.conj(phi) * psi) * dz
             weights[n, iq] = np.abs(overlap) ** 2
 
-    band_pop = np.sum(weights, axis=1)  # total per band
+    band_pop = np.sum(weights, axis=1)
 
-    # Momentum distribution n(k) = |FT[psi](k)|^2
+    # ---- Momentum distribution (raw FFT, no band assignment) -------
     n_z = len(z)
     psi_ft = np.fft.fftshift(np.fft.fft(psi, norm="ortho"))
-    dk = 2.0 * np.pi / (n_z * dz)
     k_grid = np.fft.fftshift(np.fft.fftfreq(n_z, d=dz)) * 2.0 * np.pi
     momentum_dist = np.abs(psi_ft) ** 2
 
@@ -350,54 +421,40 @@ def plot_band_structure(band_struct, outpath, title=None):
 
 
 def plot_pseudomomentum_map(wf_data, proj, band_struct, outpath, title=None):
-    """Pseudomomentum-and-band colormap.
+    """Pseudomomentum-resolved band populations as line plots.
 
-    Shows |c_n(q)|^2 as a colour intensity on a vertical stack of bands.
-    Overlaid with the band energies as guide lines.
+    Shows |c_n(q)|^2 for each band n as a function of pseudomomentum q.
+    The q-points follow the Fourier grid 2πm/L, guaranteeing orthogonal
+    basis states within the finite simulation domain.
     """
     n_bands_plot = min(proj["n_bands"], 6)
     G = band_struct.G
-    q_norm = proj["q_points"] / (G / 2)  # normalize to ±1
+    q_plot = proj["q_points"] / (G / 2)   # normalize to ±1
 
-    fig, ax = plt.subplots(figsize=(6, 5))
+    fig, axes = plt.subplots(n_bands_plot, 1, figsize=(6, 2.2 * n_bands_plot),
+                             sharex=True)
+    if n_bands_plot == 1:
+        axes = [axes]
 
-    # Colormap: for each band, plot weight as a horizontal strip
-    extent = [q_norm[0], q_norm[-1], -0.5, n_bands_plot - 0.5]
-    image_data = np.zeros((n_bands_plot, len(q_norm)))
     for n in range(n_bands_plot):
-        image_data[n, :] = proj["weights"][n, :]
+        ax = axes[n]
+        w = proj["weights"][n, :]
+        ax.plot(q_plot, w, lw=1.2)
+        ax.fill_between(q_plot, w, alpha=0.25)
+        ax.set_ylabel(f"n={n}\n$|c_n(q)|^2$", fontsize=9)
+        ax.axvline(-1, color="gray", ls=":", lw=0.5, alpha=0.5)
+        ax.axvline(1, color="gray", ls=":", lw=0.5, alpha=0.5)
+        pop = proj["band_populations"][n]
+        ax.text(0.97, 0.92, f"$W_{n}$ = {pop:.4f}",
+                transform=ax.transAxes, ha="right", va="top",
+                fontsize=8)
 
-    vmax = np.max(image_data) if np.max(image_data) > 0 else 1.0
-    ax.imshow(
-        image_data, aspect="auto", origin="lower", extent=extent,
-        cmap="hot_r", norm=Normalize(vmin=0, vmax=vmax),
-        interpolation="bicubic",
-    )
-
-    # Band-energy guide lines
-    for n in range(n_bands_plot):
-        e_scaled = band_struct.energies[n] / np.max(band_struct.energies[:4]) * (n_bands_plot - 1)
-        ax.plot(q_norm, e_scaled, "w--", lw=0.5, alpha=0.4)
-
-    ax.set_xlabel(r"Pseudomomentum $q$ [$G/2$]")
-    ax.set_ylabel("Band index $n$")
-    ax.set_yticks(range(n_bands_plot))
-    ax.set_yticklabels([str(n) for n in range(n_bands_plot)])
-    ax.axvline(-1, color="cyan", ls=":", lw=0.5, alpha=0.5)
-    ax.axvline(1, color="cyan", ls=":", lw=0.5, alpha=0.5)
-
-    cbar = fig.colorbar(
-        plt.cm.ScalarMappable(
-            norm=Normalize(vmin=0, vmax=vmax), cmap="hot_r"
-        ), ax=ax, fraction=0.04, pad=0.02,
-    )
-    cbar.set_label(r"$|c_n(q)|^2$")
-
+    axes[-1].set_xlabel(r"Pseudomomentum $q$ [$G/2$]")
     phase_tag = " [no phase]" if not proj["has_phase"] else ""
-    ax.set_title(f"{title or ''}{phase_tag}")
-    fig.tight_layout()
-    fig.savefig(outpath, dpi=300)
-    fig.savefig(outpath.replace(".pdf", ".png"), dpi=300)
+    fig.suptitle(f"{title or ''}{phase_tag}", fontsize=10)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    for ext in (".pdf", ".png"):
+        fig.savefig(outpath.replace(".pdf", ext), dpi=300)
     plt.close(fig)
     print(f"  Saved pseudomomentum map: {outpath}")
 
@@ -494,7 +551,9 @@ def decompose_and_plot(row, band_struct, outdir, n_bands=4):
     """Decompose one snapshot and generate figures."""
     l3 = row["L3"]
     a_s = row["a_s"]
-    title = f"ss-L3-{l3:.0e}".replace("-", "m").replace("+", "") + f"-as{str(a_s).replace('-','m').replace('.','p')}"
+    l3_tag = "L3-" + f"{l3:.0e}".replace("-", "m")
+    as_str = str(a_s).replace("-", "m").replace(".", "p")
+    title = f"ss-{l3_tag}-as{as_str}"
 
     result = decompose_snapshot(title, band_struct, n_bands=n_bands, l3=l3, a_s=a_s)
     if result is None:

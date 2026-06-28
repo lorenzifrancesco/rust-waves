@@ -1,0 +1,137 @@
+========================================================================
+Extended self-trapping sweep
+L3 values: ['5e-39', '1e-38', '5e-38']
+a_s range: -15..100 (48 points)
+Central sites: -4..4
+========================================================================
+  Overriding dimension to 3
+WARN: setting by hand a good initial width. Beware of NPSE
+Compiling...
+  a_s=-15  title=ss-asm15  Overriding dimension to 3
+  [snapshot exists]  w_full=3.637  w_cent=0.526  Nc/N=0.537  Ncent/N=0.793
+  a_s=-14  title=ss-asm14  Overriding dimension to 3
+  [snapshot exists]  w_full=3.576  w_cent=0.503  Nc/N=0.578  Ncent/N=0.804
+  a_s=-13  title=ss-asm13  Overriding dimension to 3
+  [snapshot exists]  w_full=3.502  w_cent=0.482  Nc/N=0.615  Ncent/N=0.816
+  a_s=-12  title=ss-asm12  Overriding dimension to 3
+  [snapshot exists]  w_full=3.428  w_cent=0.476  Nc/N=0.613  Ncent/N=0.830
+  a_s=-11  title=ss-asm11  Overriding dimension to 3
+  [snapshot exists]  w_full=3.367  w_cent=0.489  Nc/N=0.558  Ncent/N=0.842
+  a_s=-10  title=ss-asm10  Overriding dimension to 3
+  [snapshot exists]  w_full=3.319  w_cent=0.509  Nc/N=0.488  Ncent/N=0.854
+  a_s= -9  title=ss-asm9  Overriding dimension to 3
+  [snapshot exists]  w_full=3.262  w_cent=0.522  Nc/N=0.439  Ncent/N=0.866
+  a_s= -8  title=ss-asm8  Overriding dimension to 3
+  [snapshot exists]  w_full=3.179  w_cent=0.527  Nc/N=0.412  Ncent/N=0.880
+  a_s= -7  title=ss-asm7  Overriding dimension to 3
+  [snapshot exists]  w_full=3.070  w_cent=0.541  Nc/N=0.380  Ncent/N=0.895
+  a_s= -6  title=ss-asm6  Overriding dimension to 3
+  [snapshot exists]  w_full=2.978  w_cent=0.595  Nc/N=0.312  Ncent/N=0.909
+  a_s= -5  title=ss-asm5  Overriding dimension to 3
+  [snapshot exists]  w_full=2.980  w_cent=0.699  Nc/N=0.228  Ncent/N=0.915
+  a_s= -4  title=ss-asm4  Overriding dimension to 3
+  [snapshot exists]  w_full=3.102  w_cent=0.820  Nc/N=0.176  Ncent/N=0.908
+  a_s= -3  title=ss-asm3  Overriding dimension to 3
+  [snapshot exists]  w_full=3.298  w_cent=0.921  Nc/N=0.140  Ncent/N=0.885
+  a_s= -2  title=ss-asm2  Overriding dimension to 3
+  [snapshot exists]  w_full=3.506  w_cent=0.986  Nc/N=0.107  Ncent/N=0.851
+  a_s= -1  title=ss-asm1  Overriding dimension to 3
+  [snapshot exists]  w_full=3.689  w_cent=1.016  Nc/N=0.078  Ncent/N=0.810
+  a_s= +0  title=ss-as0  Overriding dimension to 3
+  [snapshot exists]  w_full=3.832  w_cent=1.021  Nc/N=0.058  Ncent/N=0.771
+  a_s= +1  title=ss-as1  Overriding dimension to 3
+  [snapshot exists]  w_full=3.936  w_cent=1.011  Nc/N=0.045  Ncent/N=0.737
+  a_s= +2  title=ss-as2  Overriding dimension to 3
+  [snapshot exists]  w_full=4.005  w_cent=0.994  Nc/N=0.038  Ncent/N=0.711
+  a_s= +3  title=ss-as3  Overriding dimension to 3
+  [snapshot exists]  w_full=4.043  w_cent=0.975  Nc/N=0.035  Ncent/N=0.693
+  a_s= +4  title=ss-as4  Overriding dimension to 3
+  [snapshot exists]  w_full=4.054  w_cent=0.959  Nc/N=0.036  Ncent/N=0.683
+  a_s= +5  title=ss-as5  Overriding dimension to 3
+  [snapshot exists]  w_full=4.042  w_cent=0.946  Nc/N=0.037  Ncent/N=0.681
+  a_s= +6  title=ss-as6  Overriding dimension to 3
+  [snapshot exists]  w_full=4.007  w_cent=0.936  Nc/N=0.039  Ncent/N=0.686
+  a_s= +7  title=ss-as7  Overriding dimension to 3
+  [snapshot exists]  w_full=3.953  w_cent=0.930  Nc/N=0.039  Ncent/N=0.697
+  a_s= +8  title=ss-as8  Overriding dimension to 3
+  [snapshot exists]  w_full=3.879  w_cent=0.926  Nc/N=0.038  Ncent/N=0.712
+  a_s= +9  title=ss-as9  Overriding dimension to 3
+  [snapshot exists]  w_full=3.787  w_cent=0.923  Nc/N=0.035  Ncent/N=0.732
+  a_s=+10  title=ss-as10  Overriding dimension to 3
+  [snapshot exists]  w_full=3.677  w_cent=0.918  Nc/N=0.031  Ncent/N=0.755
+  a_s=+11  title=ss-as11  Overriding dimension to 3
+  [snapshot exists]  w_full=3.551  w_cent=0.910  Nc/N=0.029  Ncent/N=0.780
+  a_s=+12  title=ss-as12  Overriding dimension to 3
+  [snapshot exists]  w_full=3.412  w_cent=0.898  Nc/N=0.040  Ncent/N=0.805
+  a_s=+13  title=ss-as13  Overriding dimension to 3
+  [snapshot exists]  w_full=3.262  w_cent=0.879  Nc/N=0.086  Ncent/N=0.830
+  a_s=+14  title=ss-as14  Overriding dimension to 3
+  [snapshot exists]  w_full=3.107  w_cent=0.854  Nc/N=0.196  Ncent/N=0.853
+  a_s=+15  title=ss-as15  Overriding dimension to 3
+  [snapshot exists]  w_full=2.963  w_cent=0.830  Nc/N=0.352  Ncent/N=0.873
+  a_s=+20  title=ss-L3-5em39-as20  Overriding dimension to 3
+  [snapshot exists]  w_full=2.461  w_cent=0.769  Nc/N=0.248  Ncent/N=0.946
+  a_s=+25  title=ss-L3-5em39-as25  Overriding dimension to 3
+Running...
+  w_full=1.988  w_cent=0.558  Nc/N=0.225  Ncent/N=0.964
+  a_s=+30  title=ss-L3-5em39-as30  Overriding dimension to 3
+Running...
+  w_full=1.828  w_cent=0.433  Nc/N=0.566  Ncent/N=0.962
+  a_s=+35  title=ss-L3-5em39-as35  Overriding dimension to 3
+Running...
+  w_full=2.129  w_cent=0.541  Nc/N=0.413  Ncent/N=0.951
+  a_s=+40  title=ss-L3-5em39-as40  Overriding dimension to 3
+Running...
+  w_full=2.199  w_cent=0.521  Nc/N=0.036  Ncent/N=0.955
+  a_s=+45  title=ss-L3-5em39-as45  Overriding dimension to 3
+Running...
+  w_full=2.337  w_cent=0.483  Nc/N=0.118  Ncent/N=0.954
+  a_s=+50  title=ss-L3-5em39-as50  Overriding dimension to 3
+Running...
+  w_full=2.572  w_cent=0.482  Nc/N=0.280  Ncent/N=0.935
+  a_s=+55  title=ss-L3-5em39-as55  Overriding dimension to 3
+Running...
+  w_full=2.771  w_cent=0.479  Nc/N=0.195  Ncent/N=0.915
+  a_s=+60  title=ss-L3-5em39-as60  Overriding dimension to 3
+Running...
+  w_full=2.895  w_cent=0.474  Nc/N=0.385  Ncent/N=0.914
+  a_s=+65  title=ss-L3-5em39-as65  Overriding dimension to 3
+Running...
+  w_full=3.175  w_cent=0.455  Nc/N=0.420  Ncent/N=0.899
+  a_s=+70  title=ss-L3-5em39-as70  Overriding dimension to 3
+Running...
+  w_full=3.547  w_cent=0.502  Nc/N=0.353  Ncent/N=0.879
+  a_s=+75  title=ss-L3-5em39-as75  Overriding dimension to 3
+Running...
+  w_full=3.860  w_cent=0.537  Nc/N=0.187  Ncent/N=0.859
+  a_s=+80  title=ss-L3-5em39-as80  Overriding dimension to 3
+Running...
+  w_full=4.087  w_cent=0.527  Nc/N=0.113  Ncent/N=0.844
+  a_s=+85  title=ss-L3-5em39-as85  Overriding dimension to 3
+Running...
+  w_full=4.305  w_cent=0.534  Nc/N=0.106  Ncent/N=0.829
+  a_s=+90  title=ss-L3-5em39-as90  Overriding dimension to 3
+Running...
+  w_full=4.508  w_cent=0.556  Nc/N=0.134  Ncent/N=0.814
+  a_s=+95  title=ss-L3-5em39-as95  Overriding dimension to 3
+Running...
+  w_full=4.692  w_cent=0.559  Nc/N=0.320  Ncent/N=0.791
+  a_s=+100  title=ss-as100  Overriding dimension to 3
+  [snapshot exists]  w_full=4.761  w_cent=0.440  Nc/N=0.492  Ncent/N=0.781
+  Saved summary: media/self_trapping/3d/L3-5em39/ss_sweep_extended_summary.pdf
+Traceback (most recent call last):
+  File "/home/lorenzi/bench/rust-waves/src/processing/self_trapping_extended.py", line 347, in <module>
+    main()
+    ~~~~^^
+  File "/home/lorenzi/bench/rust-waves/src/processing/self_trapping_extended.py", line 321, in main
+    df, csv_path, fig_dir = run_l3_sweep(l3)
+                            ~~~~~~~~~~~~^^^^
+  File "/home/lorenzi/bench/rust-waves/src/processing/self_trapping_extended.py", line 290, in run_l3_sweep
+    from projections_evolution import plot_heatmap_h5_3d
+  File "/home/lorenzi/bench/rust-waves/src/processing/projections_evolution.py", line 11, in <module>
+    from plot_axial_density import get_available_filename
+  File "/home/lorenzi/bench/rust-waves/src/processing/plot_axial_density.py", line 7, in <module>
+    from projections_volumetric import load_hdf5_data
+  File "/home/lorenzi/bench/rust-waves/src/processing/projections_volumetric.py", line 4, in <module>
+    import imageio
+ModuleNotFoundError: No module named 'imageio'
