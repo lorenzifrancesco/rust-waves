@@ -4,17 +4,42 @@ use ndarray::{Array1, Array3, Zip};
 use ndrustfft::Complex;
 use std::f64::consts::PI;
 
+// Each step operator comes in two forms: `*_with` takes the precomputed diagonal
+// propagators and is what the time loops call; the plain form computes them and calls
+// `*_with`, so that both forms run the same arithmetic. Splitting order and the
+// frozen-density evaluation of the nonlinear factor are those of the original code.
+
+/// exp(-i dt k^2/2) * scale for each k^2 (scale = 1/n for an unnormalised inverse FFT).
+pub fn kinetic_propagator(k_squared: &[f64], dt: Complex<f64>, scale: f64) -> Vec<Complex<f64>> {
+    k_squared.iter().map(|k| (-I * dt * 0.5 * k).exp() * scale).collect()
+}
+
+/// exp(-i dt k^2/2) on the 3D grid.
+pub fn kinetic_propagator_3d(k_squared: &Array3<f64>, dt: Complex<f64>) -> Array3<Complex<f64>> {
+    k_squared.mapv(|k| (-I * dt * 0.5 * k).exp())
+}
+
+/// exp(-i dt V) for a static potential V.
+pub fn potential_propagator_1d(v0: &Array1<Complex<f64>>, dt: Complex<f64>) -> Array1<Complex<f64>> {
+    v0.mapv(|v| (-I * dt * v).exp())
+}
+
+/// exp(-i dt V) for a static potential V on the 3D grid.
+pub fn potential_propagator_3d(v0: &Array3<Complex<f64>>, dt: Complex<f64>) -> Array3<Complex<f64>> {
+    v0.mapv(|v| (-I * dt * v).exp())
+}
+
 /**
  Perform the linear propagation step in reciprocal space
  this include
   - kinetic operator
 */
 pub fn linear_step_1d(kvec: &mut Wavefunction1D, k_range_squared: &Vec<f64>, dt: Complex<f64>) {
-    kvec.field
-        .iter_mut()
-        .zip(k_range_squared.iter())
-        .for_each(|(x, y)| *x *= (-I * dt * 1. / 2. * y).exp());
-    // debug!("{}", k_range_squared[]);
+    linear_step_1d_with(kvec, &kinetic_propagator(k_range_squared, dt, 1.0));
+}
+
+pub fn linear_step_1d_with(kvec: &mut Wavefunction1D, kinetic: &[Complex<f64>]) {
+    kvec.field.iter_mut().zip(kinetic.iter()).for_each(|(x, p)| *x *= *p);
 }
 
 /**
@@ -30,14 +55,22 @@ pub fn nonlinear_step_1d(
     g: f64,
     g5_1d: f64,
 ) {
-    xvec.field
-        .iter_mut()
-        .for_each(|x| *x *= (-I * dt * (-I * g5_1d * x.norm_sqr() + g) * x.norm_sqr()).exp());
-    xvec.field
-        .iter_mut()
-        .zip(v0.iter())
-        .for_each(|(x, y)| *x *= (-I * dt * y).exp());
+    nonlinear_step_1d_with(xvec, &potential_propagator_1d(v0, dt), dt, g, g5_1d);
 }
+
+pub fn nonlinear_step_1d_with(
+    xvec: &mut Wavefunction1D,
+    potential: &Array1<Complex<f64>>,
+    dt: Complex<f64>,
+    g: f64,
+    g5_1d: f64,
+) {
+    xvec.field.iter_mut().zip(potential.iter()).for_each(|(x, p)| {
+        let n = x.norm_sqr();
+        *x *= (-I * dt * (-I * g5_1d * n + g) * n).exp() * *p;
+    });
+}
+
 /**
  * Perform the nonlinear propagation step using the NPSE equation.
  *
@@ -58,7 +91,17 @@ pub fn nonlinear_npse(
     g: f64,
     g5_1d: f64,
 ) {
-    xvec.field.iter_mut().for_each(|x| {
+    nonlinear_npse_with(xvec, &potential_propagator_1d(v0, dt), dt, g, g5_1d);
+}
+
+pub fn nonlinear_npse_with(
+    xvec: &mut Wavefunction1D,
+    potential: &Array1<Complex<f64>>,
+    dt: Complex<f64>,
+    g: f64,
+    g5_1d: f64,
+) {
+    xvec.field.iter_mut().zip(potential.iter()).for_each(|(x, p)| {
         let n = x.norm_sqr();
         let sigma2 = (1.0 + g * n).sqrt(); // sigma^2 / a_perp^2
         *x *= (-I
@@ -66,11 +109,8 @@ pub fn nonlinear_npse(
             * (g * n / sigma2 + 1.0 / 2.0 * (sigma2 + 1.0 / sigma2)
                 - I * g5_1d * n.powi(2) / sigma2.powi(2)))
         .exp()
+            * *p;
     });
-    xvec.field
-        .iter_mut()
-        .zip(v0.iter())
-        .for_each(|(x, y)| *x *= (-I * dt * y).exp());
 }
 
 /**
@@ -79,13 +119,11 @@ pub fn nonlinear_npse(
   - kinetic operator
 */
 pub fn linear_step_3d(kvec: &mut Wavefunction3D, k_range_squared: &Array3<f64>, dt: Complex<f64>) {
-    // kvec.field.iter_mut()
-    //     .zip(k_range_squared.iter())
-    //     .for_each(|(x, y)| *x *= (-I * dt * 1. / 2. * y).exp());
-    for ((ix, iy, iz), psi) in kvec.field.indexed_iter_mut() {
-        *psi *= (-I * dt * 1. / 2. * k_range_squared[[ix, iy, iz]])
-                .exp();
-    }
+    linear_step_3d_with(kvec, &kinetic_propagator_3d(k_range_squared, dt));
+}
+
+pub fn linear_step_3d_with(kvec: &mut Wavefunction3D, kinetic: &Array3<Complex<f64>>) {
+    Zip::from(&mut kvec.field).and(kinetic).par_for_each(|x, p| *x *= *p);
 }
 
 /**
@@ -101,13 +139,20 @@ pub fn nonlinear_step_3d(
     g: f64,
     g5: f64,
 ) {
-    xvec.field.iter_mut().for_each(|x| {
-        *x *= (-I * dt * ((-I * g5 * x.norm_sqr() + 2.0 * PI * g) * x.norm_sqr()))
-              .exp();
+    nonlinear_step_3d_with(xvec, &potential_propagator_3d(v0, dt), dt, g, g5);
+}
+
+pub fn nonlinear_step_3d_with(
+    xvec: &mut Wavefunction3D,
+    potential: &Array3<Complex<f64>>,
+    dt: Complex<f64>,
+    g: f64,
+    g5: f64,
+) {
+    Zip::from(&mut xvec.field).and(potential).par_for_each(|x, p| {
+        let n = x.norm_sqr();
+        *x *= (-I * dt * ((-I * g5 * n + 2.0 * PI * g) * n)).exp() * *p;
     });
-    Zip::indexed(&mut xvec.field)
-    .for_each(|(i, j, k), x| *x *= (-I * dt * v0[[i, j, k]])
-    .exp());
 }
 
 #[cfg(test)]

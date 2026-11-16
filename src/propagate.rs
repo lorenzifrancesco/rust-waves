@@ -75,32 +75,26 @@ pub fn propagate_1d(
         save_interval = 1;
         info!("Using save_interval = 1");
     }
+    // Diagonal propagators are computed once; the 1/n_l of the unnormalised FFT pair is
+    // folded into the kinetic factor.
+    let kinetic = kinetic_propagator(&k_range_squared, h_t, 1.0 / n_l as f64);
+    let potential = potential_propagator_1d(&v0, h_t);
+    let h = psi0.l[1] - psi0.l[0];
     let mut cnt = 0;
     for idt in 0..n_t {
         fft.process(&mut psi0.field);
-        psi0.field
-            .iter_mut()
-            .for_each(|x: &mut Complex<f64>| *x = *x / (n_l as f64));
-        linear_step_1d(psi0, &k_range_squared, h_t);
+        linear_step_1d_with(psi0, &kinetic);
         ifft.process(&mut psi0.field);
         if params.physics.npse {
-            nonlinear_npse(psi0, &v0, h_t, g, g5_1d);
+            nonlinear_npse_with(psi0, &potential, h_t, g, g5_1d);
         } else {
-            nonlinear_step_1d(psi0, &v0, h_t, g, g5_1d);
+            nonlinear_step_1d_with(psi0, &potential, h_t, g, g5_1d);
         }
         if imaginary_time {
-            ns = normalization_factor_1d(psi0);
-            debug!("Normalization factor = {:10.5e}", ns);
+            ns = (h * psi0.field.iter().map(|x| x.norm_sqr()).sum::<f64>()).sqrt();
+            trace!("Normalization factor = {:10.5e}", ns);
             psi0.field.iter_mut().for_each(|x| *x = *x / ns);
-            ns = normalization_factor_1d(psi0);
-            assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
         }
-        // println!("{}", psi0[1]/dummy);
-        // dummy = psi0[1];
-        // for idl in 0..n_l {
-        //   println!("{:3.2e} ", psi0[idl]);
-        // }
-        // println!("=======")
         if idt % save_interval == 0 {
           if cnt >= params.options.n_saves {
               break;
@@ -110,7 +104,13 @@ pub fn propagate_1d(
           }
           cnt += 1;
         }
-        saved_psi.psi[params.options.n_saves-1] = psi0.clone();
+        // The last frame holds the state of the last step that completes without the
+        // break above (as when it was overwritten at every step).
+        let next = idt + 1;
+        let next_breaks = next < n_t && next % save_interval == 0 && cnt >= params.options.n_saves;
+        if next == n_t || next_breaks {
+            saved_psi.psi[params.options.n_saves - 1] = psi0.clone();
+        }
     }
     saved_psi
 }
@@ -197,39 +197,40 @@ pub fn propagate_3d(
         "Starting the propagation. Time steps = {}, save steps = {}, space ={}x{}",
         n_t, params.options.n_saves, size_x, size_y
     );
+    let kinetic = kinetic_propagator_3d(&k_squared, h_t);
+    let potential = potential_propagator_3d(&v0, h_t);
     for idt in 0..n_t {
         ndfft_par(&psi0.field, &mut buffer_1, &handler_x, 0);
         ndfft_par(&buffer_1, &mut buffer_2, &handler_y, 1);
         ndfft_par(&buffer_2, &mut psi0.field, &handler_z, 2);
-        // psi0.field.iter_mut().for_each(|x| *x = *x / (n_l as f64));
-        linear_step_3d(
-          &mut psi0, 
-          &k_squared, 
-          h_t);
+        linear_step_3d_with(&mut psi0, &kinetic);
         ndifft_par(&psi0.field, &mut buffer_1, &handler_x, 0);
         ndifft_par(&buffer_1, &mut buffer_2, &handler_y, 1);
         ndifft_par(&buffer_2, &mut psi0.field, &handler_z, 2);
-        // psi0.field.iter_mut().for_each(|x| *x = *x / (n_l as f64)); already normalized
-        nonlinear_step_3d(
-          &mut psi0, 
-          &v0, 
-          h_t, 
-          params.physics.g, 
+        // already normalized by ndifft_par
+        nonlinear_step_3d_with(
+          &mut psi0,
+          &potential,
+          h_t,
+          params.physics.g,
           params.physics.g5);
 
+        // one parallel pass for the norm and the largest cell density
+        let (sum, max) = density_sum_max(&psi0.field);
+        ns = (dv * sum).sqrt();
+        let mut max_single_cell_prob = dv * max;
         if imaginary_time {
-            ns = normalization_factor_3d(psi0);
-            debug!("Normalization factor = {:10.5e}", ns);
-            psi0.field.iter_mut().for_each(|x| *x = *x / ns);
+            trace!("Normalization factor = {:10.5e}", ns);
+            psi0.field.par_mapv_inplace(|x| x / ns);
+            max_single_cell_prob /= ns * ns;
+        } else {
+            assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
         }
-        ns = normalization_factor_3d(psi0);
-        assert!(ns - 1.0 < 1e-10, "The wavefunction is not normalized");
-        let max_single_cell_prob = dv *  psi0.field.iter().map(|x| x.norm_sqr()).fold(0.0, f64::max);
-        warn!("Max single cell prob = {}", max_single_cell_prob);
+        trace!("Max single cell prob = {}", max_single_cell_prob);
         if max_single_cell_prob > 0.05 {
             panic!("The wavefunction has exploded. Max norm = {}", max_single_cell_prob);
         }
-        
+
         if idt % save_interval == 0 {
             if cnt >= params.options.n_saves {
               break;
@@ -292,4 +293,16 @@ mod tests {
 
     #[test]
     fn involution_3d() {}
+}
+
+/// Sum and maximum of |psi|^2 over the grid, in one parallel pass.
+fn density_sum_max(field: &ndarray::Array3<Complex<f64>>) -> (f64, f64) {
+    use rayon::prelude::*;
+    let data = field.as_slice_memory_order().expect("contiguous field");
+    data.par_iter()
+        .map(|x| {
+            let n = x.norm_sqr();
+            (n, n)
+        })
+        .reduce(|| (0.0, 0.0), |a, b| (a.0 + b.0, a.1.max(b.1)))
 }

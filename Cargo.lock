@@ -611,6 +611,7 @@ dependencies = [
  "ndarray",
  "ndrustfft",
  "rand",
+ "rayon",
  "rustfft",
  "serde",
  "serde_derive",

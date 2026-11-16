@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 rustfft = "6.2.0"
-ndarray = "0.16.1"
+ndarray = { version = "0.16.1", features = ["rayon"] }
 toml = "0.5"
 serde = "1.0"
 serde_derive = "1.0"
@@ -18,3 +18,8 @@ simple_logger = "5.0.0"
 ndrustfft = "0.5.0"
 hdf5-metno = "0.12"
 rand = "0.9.0"
+rayon = "1.10"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
