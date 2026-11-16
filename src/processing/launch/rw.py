@@ -111,8 +111,13 @@ def write_from_experiment(
     e_recoil = (pi * hbar / ex["d"])**2 / (2 * ex["m"])
     # normalized
     
+    # The kernels (tools.rs: v0_axial_1d, v0_harmonic) add V = (x / l_harm_x)^2 / 2 in units
+    # of hbar omega_perp with x in units of l_perp, i.e. V = (omega_x/omega_perp)^2 x^2 / 2
+    # for l_harm_x = omega_perp/omega_x. This is not the oscillator length
+    # sqrt(hbar/(m omega_x))/l_perp = sqrt(omega_perp/omega_x), which gave a trap frequency
+    # sqrt(omega_x omega_perp) instead of omega_x.
     if ex["omega_x"] != 0 and (not free_x):
-      l_x = np.sqrt(hbar/(ex["omega_x"]*ex["m"])) / l_perp
+      l_x = ex["omega_perp"] / ex["omega_x"]
     else:
       l_x = 1e300
     

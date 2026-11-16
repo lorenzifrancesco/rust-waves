@@ -34,6 +34,8 @@ pub struct Initial {
 pub struct Physics {
     pub g: f64,
     pub g5: f64,
+    /// Axial trap: the kernels add (x / l_harm_x)^2 / 2, so l_harm_x = omega_perp / omega_x
+    /// (not the axial oscillator length). Use 1e300 for no axial trap.
     pub l_harm_x: f64,
     pub v0: f64,
     pub dl: f64,
